@@ -1,7 +1,13 @@
 import express from 'express';
 
-const app = express;
+const app = express();
 const port = 3000;
+
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+app.use(express.static('public'))
+
+
 
 
 
@@ -21,8 +27,12 @@ const menu = [
         custom: {
             mnms: 25,
             oreos: 25,
-            sprnkles: 25,
-            marshmellows: 25,
+            sprinkles: 25,
+            marshmallows: 25,
+            mnms: 25,
+            oreos: 25,
+            sprinkles: 25,
+            marshmallows: 25,
             sauces: {
                 choco: 50,
                 caramel: 50,
@@ -40,16 +50,9 @@ const menu = [
     }
 ]
 
-
-
-
-
-app.use(express())
-
 app.get('/', (req, res) => {
-    res.render('fakedex.ejs', {
-        menu,
-        ...menu
+    res.render('index.ejs', {
+        menu: menu
     })
 })
 
