@@ -1,5 +1,5 @@
 body {
-    background-color: black;
+    background-color: rgba(0, 0, 0, 0.25);
     text-align: center;
     color: white;
     font-family: "Comic Relief", system-ui;
@@ -24,19 +24,29 @@ p {
 }
 
 nav {
+    background-color: rgba(25, 25, 25, 0.75);
     display: flex;
     justify-content: center;
     align-items: center;
+    position: fixed;
+    height: 60px;
+    top: 0;
+    left: 0;
+    right: 0;
 }
 
 nav ul {
     list-style-type: none;
-    padding: 0;
+    padding: 0, 50%, 0, 50%;
 }
 
 nav li {
     margin: 0 10px;
     display: inline-block;
+}
+
+main {
+    margin-top: 60px;
 }
 
 a {
