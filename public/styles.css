@@ -1,7 +1,47 @@
 body {
-    font-family: Arial, sans-serif;
+    background-color: black;
+    text-align: center;
+    color: white;
+    font-family: "Comic Relief", system-ui;
     margin: 0;
     padding: 0;
+}
+
+h1 {
+    color: yellow;
+    font-size: 2.5em;
+    font-weight: 700;
+}
+
+h2 {
+    color: #ef2868;
+    font-weight: 700;
+}
+
+p {
+    color: yellow;
+    font-weight: 400;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+nav ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+nav li {
+    margin: 0 10px;
+    display: inline-block;
+}
+
+nav li a {
+    color: lightyellow;
+    text-decoration: none;
 }
 
 li {
@@ -12,4 +52,9 @@ li {
 math {
     margin: 20px 0;
     font-size: 1.2em;
+}
+
+.title-logo {
+    width: 500px;
+    height: 500px;
 }
