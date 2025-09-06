@@ -39,7 +39,7 @@ nav li {
     display: inline-block;
 }
 
-nav li a {
+a {
     color: lightyellow;
     text-decoration: none;
 }
