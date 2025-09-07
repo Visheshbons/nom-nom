@@ -1,10 +1,13 @@
 body {
-    background-color: rgba(0, 0, 0, 0.25);
+    background-color: #000;
+    background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
     text-align: center;
     color: white;
     font-family: "Comic Relief", system-ui;
     margin: 0;
     padding: 0;
+    line-height: 1.6;
+    min-height: 100vh;
 }
 
 h1 {
@@ -16,6 +19,15 @@ h1 {
 h2 {
     color: #ef2868;
     font-weight: 700;
+    font-size: 2em;
+    margin: 30px 0 20px 0;
+}
+
+h3 {
+    color: #ef2868;
+    font-weight: 700;
+    font-size: 1.5em;
+    margin: 20px 0 10px 0;
 }
 
 p {
@@ -24,25 +36,54 @@ p {
 }
 
 nav {
-    background-color: rgba(25, 25, 25, 0.75);
+    background-color: rgba(25, 25, 25, 0.95);
+    backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
     position: fixed;
-    height: 60px;
+    min-height: 60px;
     top: 0;
     left: 0;
     right: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    padding: 10px 20px;
 }
 
 nav ul {
     list-style-type: none;
-    padding: 0, 50%, 0, 50%;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
 }
 
 nav li {
-    margin: 0 10px;
     display: inline-block;
+}
+
+nav a {
+    color: lightyellow;
+    text-decoration: none;
+    font-weight: 400;
+    padding: 10px 18px;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+nav a:hover {
+    background-color: rgba(239, 40, 104, 0.2);
+    color: yellow;
+    transform: translateY(-2px);
 }
 
 main {
@@ -52,6 +93,11 @@ main {
 a {
     color: lightyellow;
     text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: yellow;
 }
 
 li {
@@ -67,4 +113,307 @@ math {
 .title-logo {
     width: 500px;
     height: 500px;
+}
+
+/* Main page layout styles */
+main {
+    max-width: 1200px;
+    margin: 60px auto 0;
+    padding: 20px;
+}
+
+section {
+    margin: 40px 0;
+    padding: 20px;
+}
+
+/* Hero section */
+section:first-child {
+    text-align: center;
+    padding: 0 20px;
+}
+
+section h1 {
+    margin: 30px 0;
+    line-height: 1.2;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Menu section on home page */
+.menu-item {
+    background-color: rgba(255, 255, 255, 0.1);
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 600px;
+    border: 2px solid rgba(239, 40, 104, 0.3);
+    transition:
+        transform 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.menu-item:hover {
+    transform: translateY(-5px);
+    border-color: rgba(239, 40, 104, 0.6);
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.menu-item h3 {
+    color: #ef2868;
+    margin: 0 0 10px 0;
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+.menu-item p {
+    margin: 8px 0;
+    font-size: 1.1em;
+}
+
+.menu-item p:last-child {
+    color: yellow;
+    font-weight: 700;
+    font-size: 1.3em;
+}
+
+/* Pre-order section */
+section:last-child {
+    background-color: rgba(239, 40, 104, 0.1);
+    border-radius: 15px;
+    border: 2px solid rgba(239, 40, 104, 0.3);
+}
+
+section:last-child a {
+    display: inline-block;
+    background-color: #ef2868;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 700;
+    transition:
+        background-color 0.3s ease,
+        transform 0.2s ease;
+    margin-top: 10px;
+}
+
+section:last-child a:hover {
+    background-color: #d91e5b;
+    transform: scale(1.05);
+}
+
+/* HR styling */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #ef2868, transparent);
+    margin: 30px 0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    nav {
+        min-height: 70px;
+        padding: 15px 10px;
+    }
+
+    nav ul {
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    nav a {
+        padding: 8px 12px;
+        font-size: 0.9em;
+        min-height: 40px;
+    }
+
+    main {
+        margin-top: 80px;
+        padding: 10px;
+    }
+
+    .title-logo {
+        width: 300px;
+        height: 300px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    .menu-item {
+        margin: 15px 10px;
+        padding: 15px;
+    }
+
+    section {
+        padding: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    nav {
+        min-height: 80px;
+        padding: 10px 5px;
+    }
+
+    nav ul {
+        gap: 8px;
+    }
+
+    nav a {
+        padding: 6px 10px;
+        font-size: 0.85em;
+        min-height: 36px;
+    }
+
+    main {
+        margin-top: 90px;
+        padding: 5px;
+    }
+
+    .title-logo {
+        width: 250px;
+        height: 250px;
+    }
+
+    h1 {
+        font-size: 1.8em;
+    }
+
+    section {
+        padding: 10px;
+        margin: 20px 0;
+    }
+}
+
+/* Success message styles */
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* Table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+table th,
+table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+table th {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+}
+
+table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Button styles */
+button {
+    background-color: #4caf50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: "Comic Relief", system-ui;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+button.cancel {
+    background-color: #f44336;
+    margin-left: 10px;
+}
+
+button.cancel:hover {
+    background-color: #da190b;
+}
+
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #333;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 10px;
+    color: white;
+}
+
+.modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: white;
+    text-decoration: none;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: yellow;
+}
+
+.form-group input {
+    width: 90%;
+    padding: 8px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-family: "Comic Relief", system-ui;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #ef2868;
+}
+
+.form-total {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: yellow;
+}
+
+.form-buttons {
+    text-align: center;
 }

@@ -11,6 +11,9 @@ app.set("view engine", "ejs");
 const orderLimit = 2;
 const banLimit = 5;
 
+// Store orders in memory (in production, use a database)
+let orders = [];
+
 const menu = [
   {
     name: "Cookies",
@@ -49,6 +52,46 @@ app.get("/", (req, res) => {
   res.render("index.ejs", {
     menu: menu,
   });
+});
+
+app.get("/menu", (req, res) => {
+  res.render("menu.ejs", {
+    menu: menu,
+    success: req.query.success === "true",
+  });
+});
+
+app.post("/pre-order", (req, res) => {
+  const { item, quantity, customerName, customerEmail } = req.body;
+
+  // Find the menu item
+  const menuItem = menu.find((m) => m.name === item);
+
+  if (!menuItem) {
+    return res.status(400).send("Invalid menu item");
+  }
+
+  // Create order
+  const order = {
+    id: orders.length + 1,
+    item: item,
+    quantity: parseInt(quantity),
+    customerName: customerName,
+    customerEmail: customerEmail,
+    price: menuItem.price,
+    total: menuItem.price * parseInt(quantity),
+    timestamp: new Date(),
+    status: "pending",
+  };
+
+  orders.push(order);
+
+  // Redirect back to menu with success message
+  res.redirect("/menu?success=true");
+});
+
+app.get("/orders", (req, res) => {
+  res.json(orders);
 });
 
 app.use((req, res, next) => {

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nom Nom - Delicious Treats">
+    <meta name="keywords" content="cookies, brownies, lemonade, treats">
+    <meta name="author" content="Nom Nom Team">
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="logo-photoroom.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+    <title>Menu | Nom Nom</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/">Home</a></li>
+                <li><a href="/menu">Menu</a></li>
+                <li><a href="/about">About</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section>
+            <h1>Our Menu</h1>
+        </section>
+        <hr>
+        <section>
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="success-message">
+                    Order placed successfully! We'll contact you soon.
+                </div>
+            <% } %>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Price</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for (let i = 0; i < menu.length; i++) { %>
+                    <tr>
+                        <td><%= menu[i].name %></td>
+                        <td>$<%= menu[i].price.toFixed(2) %></td>
+                        <td>
+                            <button onclick="openOrderForm('<%= menu[i].name %>', <%= menu[i].price %>)">Pre-Order</button>
+                        </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Pre-order Form Modal -->
+        <div id="orderModal" class="modal">
+            <div class="modal-content">
+                <span onclick="closeOrderForm()" class="modal-close">&times;</span>
+                <h2>Pre-Order</h2>
+                <form action="/pre-order" method="POST">
+                    <div class="form-group">
+                        <label for="item">Item:</label>
+                        <input type="text" id="item" name="item" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quantity">Quantity:</label>
+                        <input type="number" id="quantity" name="quantity" min="1" max="10" value="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerName">Your Name:</label>
+                        <input type="text" id="customerName" name="customerName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customerEmail">Your Email:</label>
+                        <input type="email" id="customerEmail" name="customerEmail" required>
+                    </div>
+
+                    <div class="form-total">
+                        <strong>Total: $<span id="totalPrice">0.00</span></strong>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="submit">Place Pre-Order</button>
+                        <button type="button" onclick="closeOrderForm()" class="cancel">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            let currentPrice = 0;
+
+            function openOrderForm(itemName, price) {
+                document.getElementById('item').value = itemName;
+                currentPrice = price;
+                updateTotal();
+                document.getElementById('orderModal').style.display = 'block';
+            }
+
+            function closeOrderForm() {
+                document.getElementById('orderModal').style.display = 'none';
+            }
+
+            function updateTotal() {
+                const quantity = document.getElementById('quantity').value || 1;
+                const total = (currentPrice * quantity).toFixed(2);
+                document.getElementById('totalPrice').textContent = total;
+            }
+
+            document.getElementById('quantity').addEventListener('input', updateTotal);
+
+            // Close modal when clicking outside of it
+            window.onclick = function(event) {
+                const modal = document.getElementById('orderModal');
+                if (event.target == modal) {
+                    closeOrderForm();
+                }
+            }
+        </script>
+    </main>
+</body>
+</html>
