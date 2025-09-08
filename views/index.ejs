@@ -15,16 +15,7 @@
     <title>Nom Nom</title>
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/menu">Menu</a></li>
-                <li><a href="/about">About</a></li>
-                <li><a href="/contact">Contact</a></li>
-            </ul>
-        </nav>
-    </header>
+    <%- include('header') %>
     <main>
         <section>
             <img src="logo-photoroom.png" alt="Nom Nom Logo" class='title-logo'>
@@ -35,11 +26,13 @@
         <section>
             <h2>Our Menu</h2>
             <% for (let i = 0; i < menu.length; i++) { %>
-                <div class="menu-item">
-                    <h3><%= menu[i].name %></h3>
-                    <p><%= menu[i].description %></p>
-                    <p>$<%= menu[i].price.toFixed(2) %></p>
-                </div>
+                <a href="/menu">
+                    <div class="menu-item">
+                        <h3><%= menu[i].name %></h3>
+                        <p><%= menu[i].description %></p>
+                        <p>$<%= menu[i].price.toFixed(2) %></p>
+                    </div>
+                </a>
             <% } %>
         </section>
         <hr>
