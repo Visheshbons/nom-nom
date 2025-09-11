@@ -193,9 +193,15 @@ app.post("/admin/login", async (req, res) => {
   //   res.render("admin-login.ejs", { error: "Invalid credentials" });
   // }
 
-  if (await verifyPassword(ADMIN_HASH, password)) {
+  if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
+    const sessionId = Date.now().toString() + Math.random().toString(36);
+    adminSessions.add(sessionId);
+    res.cookie("adminSession", sessionId, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    }); // 24 hours
+    res.redirect("/admin");
     // Log in the admin (set session/JWT/etc.)
-    res.status(200).json({ success: true });
   } else {
     res.status(401).json({ success: false, error: "Invalid credentials" });
   }
