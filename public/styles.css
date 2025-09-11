@@ -1485,3 +1485,7 @@ body.login-page {
             0 0 15px rgba(255, 63, 120, 0.3);
     }
 }
+
+.top {
+    padding-top: 45px;
+}
