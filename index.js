@@ -1,6 +1,8 @@
 // ---------- INITIALISATION ---------- \\
 import express from "express";
 import cookieParser from "cookie-parser";
+import argon2, { verify } from "argon2";
+import chalk from "chalk";
 
 const app = express();
 const port = 3000;
@@ -25,6 +27,11 @@ const adminCredentials = {
   password: "password123",
 };
 
+const ADMIN_HASH_PASSWORD =
+  "$argon2id$v=19$m=65536,t=3,p=4$OhTi43nYfnrFFabeMmUziQ$cfWTaa5o2Z1s6hI2aGwJVR/Xe4AGBCrE9vClzm8lI8w";
+const ADMIN_HASH_USERNAME =
+  "$argon2id$v=19$m=65536,t=3,p=4$+hZ9ryGeRQBX0Zjhc9bFNA$d8fSQDyxKx2BR61woYg3lwdNr/Xwgeff8QEf+agTUic";
+
 // Simple session storage (in memory)
 let adminSessions = new Set();
 
@@ -37,6 +44,27 @@ function requireAuth(req, res, next) {
     return next();
   } else {
     return res.redirect("/admin/login");
+  }
+}
+
+async function hashPassword(password) {
+  try {
+    const hash = await argon2.hash(password);
+    return hash;
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function verifyPassword(hash, password) {
+  try {
+    if (await argon2.verify(hash, password)) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -147,22 +175,29 @@ app.get("/admin/login", (req, res) => {
 });
 
 // Admin login POST
-app.post("/admin/login", (req, res) => {
+app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
 
-  if (
-    username === adminCredentials.username &&
-    password === adminCredentials.password
-  ) {
-    const sessionId = Date.now().toString() + Math.random().toString(36);
-    adminSessions.add(sessionId);
-    res.cookie("adminSession", sessionId, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    }); // 24 hours
-    res.redirect("/admin");
+  // if (
+  //   username === adminCredentials.username &&
+  //   password === ADMIN_HASH_PASSWORD
+  // ) {
+  //   const sessionId = Date.now().toString() + Math.random().toString(36);
+  //   adminSessions.add(sessionId);
+  //   res.cookie("adminSession", sessionId, {
+  //     httpOnly: true,
+  //     maxAge: 24 * 60 * 60 * 1000,
+  //   }); // 24 hours
+  //   res.redirect("/admin");
+  // } else {
+  //   res.render("admin-login.ejs", { error: "Invalid credentials" });
+  // }
+
+  if (await verifyPassword(ADMIN_HASH, password)) {
+    // Log in the admin (set session/JWT/etc.)
+    res.status(200).json({ success: true });
   } else {
-    res.render("admin-login.ejs", { error: "Invalid credentials" });
+    res.status(401).json({ success: false, error: "Invalid credentials" });
   }
 });
 
@@ -268,7 +303,8 @@ app.use((req, res, next) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${chalk.green(port)}`);
+  selfTest();
 });
 
 // ---------- SELF PING ---------- \\
@@ -286,4 +322,83 @@ if (selfPing) {
         console.error("Ping failed:", err);
       });
   }, 600000); // 600,000 milliseconds = 10 minutes
+}
+
+async function selfTest() {
+  console.log();
+  console.log(
+    chalk.yellowBright(`----------########### SELF TEST ###########----------`),
+  );
+  console.log();
+  console.log(`Running Argon2 self-test...`);
+
+  const testPassword = `testString`;
+  let total = 0;
+
+  // 1. Basic hash-verify test
+  const hash1 = await argon2.hash(testPassword);
+  if (await verifyPassword(hash1, testPassword)) {
+    console.log(`Test 1/5: [${chalk.green("PASS")}]`);
+    total++;
+  } else {
+    console.log(`Test 1/5: [${chalk.red("FAIL")}]`);
+  }
+
+  // 2. Different hashes for same input (checking random salt)
+  const hash2 = await argon2.hash(testPassword);
+  if (hash1 !== hash2) {
+    console.log(`Test 2/5: [${chalk.green("PASS")}]`);
+    total++;
+  } else {
+    console.log(`Test 2/5: [${chalk.red("FAIL")}]`);
+  }
+
+  // 3. Verify rejects wrong password
+  if (!(await verifyPassword(hash1, `wrongPassword`))) {
+    console.log(`Test 3/5: [${chalk.green("PASS")}]`);
+    total++;
+  } else {
+    console.log(`Test 3/5: [${chalk.red("FAIL")}]`);
+  }
+
+  // 4. Corrupted hash detection (invalid hash string)
+  const corruptedHash = hash1.slice(0, -1); // Remove last char
+  let corruptedTestPassed = false;
+  try {
+    corruptedTestPassed = !(await verifyPassword(corruptedHash, testPassword));
+  } catch {
+    corruptedTestPassed = true; // Error caught means pass
+  }
+  if (corruptedTestPassed) {
+    total++;
+  }
+  console.log(
+    `Test 4/5: [${corruptedTestPassed ? `${chalk.green("PASS")}` : `${chalk.red("FAIL")}`}]`,
+  );
+
+  // 5. Timing check - not exact but ensures verification completes
+  const start = Date.now();
+  await verifyPassword(hash1, testPassword);
+  const duration = Date.now() - start;
+  if (duration > 0) {
+    console.log(`Test 5/5: [${chalk.green("PASS")}]`);
+    total++;
+  } else {
+    console.log(`Test 5/5: [${chalk.red("FAIL")}]`);
+  }
+
+  console.log();
+  console.log(`Total tests passed: ${chalk.green(total)}`);
+  if (total === 5) {
+    console.log(chalk.green(`[PASS]`));
+  } else {
+    console.log(chalk.red(`[FAIL]`));
+    console.log("Inform the developer as soon as possible");
+  }
+
+  console.log();
+  console.log(
+    chalk.yellowBright(`----------########### SELF TEST ###########----------`),
+  );
+  console.log();
 }
