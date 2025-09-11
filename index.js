@@ -14,6 +14,7 @@ app.set("view engine", "ejs");
 // ---------- VARIABLES ---------- \\
 const orderLimit = 2;
 const banLimit = 5;
+const selfPing = false;
 
 // Store orders in memory (in production, use a database)
 let orders = [];
@@ -269,3 +270,20 @@ app.use((req, res, next) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+// ---------- SELF PING ---------- \\
+// This will bypass the Render free instance server shutdown
+if (selfPing) {
+  console.log("SELF PING ACTIVE");
+  setInterval(() => {
+    fetch("https://diminished-rights.onrender.com")
+      .then(() => {
+        console.log("SELF PING");
+        console.timeEnd("Ping Interval");
+        console.time("Ping Interval");
+      })
+      .catch((err) => {
+        console.error("Ping failed:", err);
+      });
+  }, 600000); // 600,000 milliseconds = 10 minutes
+}
