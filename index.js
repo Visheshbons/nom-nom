@@ -43,10 +43,14 @@ const menu = [
   {
     name: "Cookies",
     price: 2.5,
+    stock: 100,
+    visible: true,
   },
   {
     name: "Brownies",
     price: 2,
+    stock: 100,
+    visible: true,
     custom: {
       mnms: 25,
       oreos: 25,
@@ -66,10 +70,14 @@ const menu = [
   {
     name: "Lemonade",
     price: 1.5,
+    stock: 100,
+    visible: true,
   },
   {
     name: "Gambling",
     price: 2,
+    stock: 100,
+    visible: false,
   },
 ];
 

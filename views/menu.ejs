@@ -38,13 +38,15 @@
                 </thead>
                 <tbody>
                     <% for (let i = 0; i < menu.length; i++) { %>
-                    <tr>
-                        <td><%= menu[i].name %></td>
-                        <td>$<%= menu[i].price.toFixed(2) %></td>
-                        <td>
-                            <button onclick="openOrderForm('<%= menu[i].name %>', <%= menu[i].price %>)">Pre-Order</button>
-                        </td>
-                    </tr>
+                        <% if (menu[i].visible) { %>
+                            <tr>
+                                <td><%= menu[i].name %></td>
+                                <td>$<%= menu[i].price.toFixed(2) %></td>
+                                <td>
+                                    <button onclick="openOrderForm('<%= menu[i].name %>', <%= menu[i].price %>)">Pre-Order</button>
+                                </td>
+                            </tr>
+                        <% } %>
                     <% } %>
                 </tbody>
             </table>
