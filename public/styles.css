@@ -418,6 +418,107 @@ button.cancel:hover {
     text-align: center;
 }
 
+/* Contact page specific styles */
+.contact {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 30px;
+    align-items: start;
+    justify-items: center;
+}
+
+.contact-form {
+    background-color: rgba(255,255,255,0.06);
+    padding: 24px;
+    border-radius: 12px;
+    border: 2px solid rgba(239,40,104,0.18);
+    width: 100%;
+    max-width: 700px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    text-align: left;
+}
+
+.contact-form .form-group {
+    margin-bottom: 18px;
+}
+
+.contact-form label {
+    display: block;
+    margin-bottom: 8px;
+    color: yellow;
+    font-weight: 600;
+}
+
+.contact-form input,
+.contact-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    background-color: rgba(255,255,255,0.04);
+    color: white;
+    font-family: "Comic Relief", system-ui;
+    font-size: 1em;
+    box-sizing: border-box;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.contact-form input:focus,
+.contact-form textarea:focus {
+    outline: none;
+    border-color: #ef2868;
+    box-shadow: 0 6px 18px rgba(239,40,104,0.12);
+    background-color: rgba(255,255,255,0.06);
+}
+
+.contact-form textarea {
+    min-height: 140px;
+    resize: vertical;
+}
+
+.contact-form button[type="submit"] {
+    display: inline-block;
+    background-color: #ef2868;
+    color: white;
+    padding: 12px 22px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.12s ease;
+}
+
+.contact-form button[type="submit"]:hover {
+    background-color: #d91e5b;
+    transform: translateY(-2px);
+}
+
+.contact-details {
+    background-color: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    padding: 18px;
+    width: 100%;
+    max-width: 320px;
+    border: 2px solid rgba(239,40,104,0.12);
+    text-align: left;
+}
+
+.contact-details h2 {
+    margin-top: 0;
+}
+
+@media (max-width: 900px) {
+    .contact {
+        grid-template-columns: 1fr;
+        padding: 0 10px;
+    }
+
+    .contact-details {
+        max-width: none;
+        width: 100%;
+    }
+}
+
 /* Admin Login Styles */
 body.login-page {
     margin: 0;

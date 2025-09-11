@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nom Nom - Delicious Treats">
+    <meta name="keywords" content="cookies, brownies, lemonade, treats">
+    <meta name="author" content="Nom Nom Team">
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="shortcut icon" href="/logo-photoroom.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+    <title>Contact | Nom Nom</title>
+</head>
+<body>
+    <%- include('header') %>
+    <main>
+        <section>
+            <h1>Contact Us</h1>
+            <p>Ask your inquiries!</p>
+        </section>
+        <section class="contact">
+            <form action="/contact" method="POST" class="contact-form">
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" name="name" required maxlength="100" placeholder="Your full name">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required maxlength="100" placeholder="you@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" rows="6" required maxlength="1000" placeholder="Write your message here..."></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit">Send Message</button>
+                </div>
+            </form>
+            <div class="contact-details">
+                <h2>Our Info</h2>
+                <p>Email: <a href="mailto:hello@nomnom.com">hello@nomnom.com</a></p>
+                <p>Phone: <a href="tel:+1234567890">+1 (234) 567-890</a></p>
+                <p>Address: 123 Cookie Lane, Treatsville, CA 90001</p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

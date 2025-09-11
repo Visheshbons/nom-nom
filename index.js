@@ -297,6 +297,10 @@ app.get("/about", (req, res) => {
   res.render("about.ejs");
 });
 
+app.get("/contact", (req, res) => {
+  res.render("contact.ejs");
+})
+
 // ---------- OTHERS ---------- \\
 app.use((req, res, next) => {
   res.send("ERR_404_NOT_FOUND");
