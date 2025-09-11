@@ -1038,3 +1038,349 @@ body.login-page {
         width: 100%;
     }
 }
+
+/* About Page Styles */
+.about {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.about h1 {
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.about h2 {
+    font-size: 2.2em;
+    margin: 40px 0 30px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.about p {
+    line-height: 1.8;
+    margin: 25px 0;
+    text-align: left;
+    color: white;
+}
+
+.about p:first-of-type {
+    text-align: center;
+    color: yellow;
+    font-weight: 600;
+    margin-bottom: 40px;
+}
+
+/* Gen-Z section styling */
+.gen-z {
+    background: linear-gradient(
+        135deg,
+        rgba(239, 40, 104, 0.1) 0%,
+        rgba(255, 255, 0, 0.05) 100%
+    );
+    border: 2px solid rgba(239, 40, 104, 0.3);
+    border-radius: 20px;
+    padding: 40px;
+    margin: 40px auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.gen-z::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 40%,
+        rgba(255, 255, 0, 0.03) 50%,
+        transparent 60%
+    );
+    animation: shimmer 6s infinite;
+    pointer-events: none;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) translateY(-100%) rotate(30deg);
+    }
+    100% {
+        transform: translateX(100%) translateY(100%) rotate(30deg);
+    }
+}
+
+.gen-z h2 {
+    background: linear-gradient(45deg, #ef2868, #ff3878, yellow, #ef2868);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-text 3s ease infinite;
+    margin-bottom: 30px;
+}
+
+@keyframes gradient-text {
+    0%,
+    100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Ordered list styling */
+.about ol {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 30px;
+    margin: 30px 0;
+    border-left: 5px solid #ef2868;
+}
+
+.about ol li {
+    font-size: 1.1em;
+    line-height: 1.7;
+    margin: 15px 0;
+    padding-left: 10px;
+    color: white;
+    list-style-type: none;
+    counter-increment: step-counter;
+    position: relative;
+}
+
+.about ol {
+    counter-reset: step-counter;
+}
+
+.about ol li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: -40px;
+    top: 0;
+    background: linear-gradient(45deg, #ef2868, #ff3878);
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9em;
+    box-shadow: 0 2px 10px rgba(239, 40, 104, 0.3);
+}
+
+/* Highlight text styling */
+.gen-z p:last-child {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 0, 0.1) 0%,
+        rgba(239, 40, 104, 0.1) 100%
+    );
+    border: 2px solid rgba(255, 255, 0, 0.3);
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 30px;
+    position: relative;
+}
+
+.gen-z p:last-child::after {
+    content: "🍪🥤🔥";
+    position: absolute;
+    bottom: -15px;
+    right: 20px;
+    background-color: #1a1a1a;
+    padding: 5px 15px;
+    border-radius: 20px;
+}
+
+/* Responsive about page */
+@media (max-width: 768px) {
+    .about {
+        padding: 30px 15px;
+    }
+
+    .about h1 {
+        font-size: 2.2em;
+    }
+
+    .gen-z h2 {
+        font-size: 1.8em;
+        letter-spacing: 1px;
+    }
+
+    .gen-z {
+        padding: 25px;
+        margin: 30px 10px;
+    }
+
+    .about ol {
+        padding: 20px;
+        margin: 20px 0;
+    }
+
+    .about ol li::before {
+        left: -35px;
+        width: 25px;
+        height: 25px;
+        font-size: 0.8em;
+    }
+
+    .about p {
+        font-size: 1em;
+    }
+
+    .about p:first-of-type {
+        font-size: 1.2em;
+    }
+}
+
+@media (max-width: 480px) {
+    .about {
+        padding: 20px 10px;
+    }
+
+    .about h1 {
+        font-size: 2em;
+    }
+
+    .gen-z h2 {
+        font-size: 1.6em;
+    }
+
+    .gen-z {
+        padding: 20px;
+        margin: 20px 5px;
+    }
+
+    .about ol {
+        padding: 15px;
+    }
+
+    .about ol li::before {
+        left: -30px;
+        width: 22px;
+        height: 22px;
+        font-size: 0.75em;
+    }
+
+    .gen-z p:last-child::after {
+        bottom: -10px;
+        right: 15px;
+        padding: 3px 10px;
+    }
+}
+
+/* Gen-Z Slang Styling */
+.gen-z-slang {
+    position: relative;
+    color: #ffff00;
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);
+    transition: all 0.3s ease;
+    cursor: default;
+    display: inline-block;
+    background: linear-gradient(45deg, #ffff00, #ff3878, #ffff00);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: subtle-glow 4s ease-in-out infinite;
+}
+
+@keyframes subtle-glow {
+    0%,
+    100% {
+        background-position: 0% 50%;
+        text-shadow: 0 0 5px rgba(255, 255, 0, 0.3);
+    }
+    50% {
+        background-position: 100% 50%;
+        text-shadow: 0 0 8px rgba(255, 63, 120, 0.4);
+    }
+}
+
+.gen-z-slang:hover {
+    transform: scale(1.05);
+    text-shadow:
+        0 0 15px rgba(255, 255, 0, 0.6),
+        0 0 25px rgba(255, 63, 120, 0.4);
+    animation-duration: 1s;
+}
+
+.gen-z-slang::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 0, 0.1),
+        transparent
+    );
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+}
+
+.gen-z-slang:hover::before {
+    opacity: 1;
+}
+
+/* Special effects for different slang terms */
+.gen-z-slang:nth-of-type(1) {
+    animation-delay: 0s;
+}
+
+.gen-z-slang:nth-of-type(2) {
+    animation-delay: 0.5s;
+}
+
+.gen-z-slang:nth-of-type(3) {
+    animation-delay: 1s;
+}
+
+.gen-z-slang:nth-of-type(4) {
+    animation-delay: 1.5s;
+}
+
+.gen-z-slang:nth-of-type(5) {
+    animation-delay: 2s;
+}
+
+.gen-z-slang:nth-of-type(6) {
+    animation-delay: 2.5s;
+}
+
+.gen-z-slang:nth-of-type(7) {
+    animation-delay: 3s;
+}
+
+.gen-z-slang:nth-of-type(8) {
+    animation-delay: 3.5s;
+}
+
+/* Mobile adjustments for slang effects */
+@media (max-width: 768px) {
+    .gen-z-slang {
+        text-shadow: 0 0 3px rgba(255, 255, 0, 0.3);
+    }
+
+    .gen-z-slang:hover {
+        transform: scale(1.02);
+        text-shadow:
+            0 0 10px rgba(255, 255, 0, 0.5),
+            0 0 15px rgba(255, 63, 120, 0.3);
+    }
+}
