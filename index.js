@@ -34,25 +34,25 @@ const ADMIN_HASH_USERNAME =
 
 // Simple session storage (in memory)
 let adminSessions = new Set();
+let serverSession = Math.random().toString(36).substring(2, 15);
+// Server session is used as a random identifier for the auth cookies
+// This helps against cookies being made and used to bypass login
+// This is logged in the server start
 
 // Middleware to check admin authentication
 function requireAuth(req, res, next) {
-  const sessionId = req.headers.cookie
-    ?.split("adminSession=")[1]
-    ?.split(";")[0];
-  if (sessionId && adminSessions.has(sessionId)) {
+  const cookie = req.headers.cookie || "";
+  const sessionId = cookie.split("adminSession=")[1]?.split(";")[0];
+  const sessionServer = cookie.split("serverSession=")[1]?.split(";")[0];
+
+  if (
+    sessionId &&
+    adminSessions.has(sessionId) &&
+    sessionServer === serverSession
+  ) {
     return next();
   } else {
     return res.redirect("/admin/login");
-  }
-}
-
-async function hashPassword(password) {
-  try {
-    const hash = await argon2.hash(password);
-    return hash;
-  } catch (err) {
-    console.error(err);
   }
 }
 
@@ -176,6 +176,11 @@ app.get("/admin/login", (req, res) => {
 
 // Admin login POST
 app.post("/admin/login", async (req, res) => {
+  console.log();
+  console.log(
+    chalk.yellow("-------######## ADMIN LOGIN ATTEMPT ########--------"),
+  );
+  console.log();
   const { username, password } = req.body;
 
   // if (
@@ -194,17 +199,30 @@ app.post("/admin/login", async (req, res) => {
   // }
 
   if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
+    console.log(`Authentication: [${chalk.green(`PASS`)}]`);
     const sessionId = Date.now().toString() + Math.random().toString(36);
     adminSessions.add(sessionId);
     res.cookie("adminSession", sessionId, {
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
     }); // 24 hours
+    res.cookie("serverSession", serverSession, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    }); // 24 hours
+    console.log(`Login: [${chalk.green(`PASS`)}]`);
     res.redirect("/admin");
     // Log in the admin (set session/JWT/etc.)
   } else {
+    console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
     res.status(401).json({ success: false, error: "Invalid credentials" });
   }
+
+  console.log();
+  console.log(
+    chalk.yellow(`-------######## ADMIN LOGIN ATTEMPT ########--------`),
+  );
+  console.log();
 });
 
 // Admin logout
@@ -216,6 +234,7 @@ app.get("/admin/logout", (req, res) => {
     adminSessions.delete(sessionId);
   }
   res.clearCookie("adminSession");
+  res.clearCookie("serverSession");
   res.redirect("/admin/login");
 });
 
@@ -305,7 +324,7 @@ app.get("/about", (req, res) => {
 
 app.get("/contact", (req, res) => {
   res.render("contact.ejs");
-})
+});
 
 // ---------- OTHERS ---------- \\
 app.use((req, res, next) => {
@@ -314,6 +333,7 @@ app.use((req, res, next) => {
 
 app.listen(port, () => {
   console.log(`Server is running on port ${chalk.green(port)}`);
+  console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
   selfTest();
 });
 
