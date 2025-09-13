@@ -33,17 +33,32 @@
                     <tr>
                         <th>Item</th>
                         <th>Price</th>
+                        <th>Stock</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     <% for (let i = 0; i < menu.length; i++) { %>
                         <% if (menu[i].visible) { %>
+                            <% console.log(menu[i], menu[i].stock) %>
                             <tr>
                                 <td><%= menu[i].name %></td>
                                 <td>$<%= menu[i].price.toFixed(2) %></td>
                                 <td>
-                                    <button onclick="openOrderForm('<%= menu[i].name %>', <%= menu[i].price %>)">Pre-Order</button>
+                                    <% if (menu[i].stock === 0) { %>
+                                        <span style="color: red; font-weight: bold;">Out of stock</span>
+                                    <% } else if (menu[i].stock <= 10) { %>
+                                        <span style="color: orange; font-weight: bold;">Only <%= menu[i].stock %> left!</span>
+                                    <% } else { %>
+                                        <span style="color: green;"><%= menu[i].stock %> available</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (menu[i].stock === 0) { %>
+                                        <button disabled style="opacity: 0.5; cursor: not-allowed;">Out of Stock</button>
+                                    <% } else { %>
+                                        <button onclick="openOrderForm('<%= menu[i].name %>', <%= menu[i].price %>, <%= menu[i].stock %>)">Pre-Order</button>
+                                    <% } %>
                                 </td>
                             </tr>
                         <% } %>
@@ -93,9 +108,13 @@
         <script>
             let currentPrice = 0;
 
-            function openOrderForm(itemName, price) {
+            function openOrderForm(itemName, price, stock) {
                 document.getElementById('item').value = itemName;
                 currentPrice = price;
+                // Update max quantity based on stock
+                const quantityInput = document.getElementById('quantity');
+                quantityInput.max = Math.min(10, stock);
+                quantityInput.value = 1;
                 updateTotal();
                 document.getElementById('orderModal').style.display = 'block';
             }

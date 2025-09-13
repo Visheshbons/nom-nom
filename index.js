@@ -68,17 +68,17 @@ async function verifyPassword(hash, password) {
   }
 }
 
-const menu = [
+let menu = [
   {
     name: "Cookies",
     price: 2.5,
-    stock: 100,
+    stock: 75,
     visible: true,
   },
   {
     name: "Brownies",
     price: 2,
-    stock: 100,
+    stock: 25,
     visible: true,
     custom: {
       mnms: 25,
@@ -99,13 +99,13 @@ const menu = [
   {
     name: "Lemonade",
     price: 1.5,
-    stock: 100,
+    stock: 40,
     visible: true,
   },
   {
     name: "Gambling",
     price: 2,
-    stock: 100,
+    stock: Math.MAX_SAFE_INTEGER,
     visible: false,
   },
 ];
@@ -141,6 +141,12 @@ app.post("/pre-order", (req, res) => {
   if (userOrders >= orderLimit) {
     return res.status(400).send("Order limit reached");
   }
+
+  if (menuItem.quantity < parseInt(quantity)) {
+    return res.status(400).send("Not enough stock");
+  }
+
+  menuItem.stock -= parseInt(quantity);
 
   // Create order
   const order = {
@@ -331,10 +337,21 @@ app.use((req, res, next) => {
   res.send("ERR_404_NOT_FOUND");
 });
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Server is running on port ${chalk.green(port)}`);
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
-  selfTest();
+  await selfTest();
+  for (let i = 0; i < menu.length; i++) {
+    if (menu[i].stock <= 10) {
+      console.warn(
+        `[${chalk.yellow(`WARN`)}]: Item "${chalk.grey(menu[i].name)}" has only ${chalk.red(menu[i].stock)} in stock`,
+      );
+    } else {
+      console.log(
+        `Item "${chalk.grey(menu[i].name)}" has ${chalk.green(menu[i].stock)} in stock`,
+      );
+    }
+  }
 });
 
 // ---------- SELF PING ---------- \\
