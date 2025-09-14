@@ -344,10 +344,13 @@ app.get("/contact", (req, res) => {
 });
 
 // ---------- DEBUG ---------- \\
-app.get("/debug", (req, res) => {
+app.get("/debug", requireAuth, (req, res) => {
   res.clearCookie("OrderCount");
-  console.log(`[${chalk.red(`WARN`)}]: Debug route accessed`);
-  logs.push(`[WARN]: Debug route accessed`);
+  const reload = req.query.reload === "true";
+  if (reload != "true") {
+    console.log(`[${chalk.red(`WARN`)}]: Debug route accessed`);
+    logs.push(`[WARN]: Debug route accessed`);
+  }
 
   // Prepare debug information
   const debugInfo = {
@@ -381,11 +384,57 @@ app.get("/debug", (req, res) => {
     },
   };
 
+  res.render("debug.ejs", { data: debugInfo });
+});
+
+// Debug API endpoint for JSON response
+app.get("/debug/api", (req, res) => {
+  console.log(`[${chalk.red(`WARN`)}]: Debug API route accessed`);
+  logs.push(`[WARN]: Debug API route accessed`);
+
+  // Prepare debug information
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    server: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      port: port,
+      sessionId: serverSession,
+    },
+    orders: {
+      total: orders.length,
+      pending: orders.filter((o) => o.status === "pending").length,
+      completed: orders.filter((o) => o.status === "completed").length,
+      confirmed: orders.filter((o) => o.status === "confirmed").length,
+    },
+    menu: menu.map((item) => ({
+      name: item.name,
+      stock: item.stock,
+      visible: item.visible,
+      lowStock: item.stock <= 10,
+    })),
+    sessions: {
+      activeAdminSessions: adminSessions.size,
+    },
+    logs: logs.slice(-50).reverse(), // Return last 50 log entries, newest first
+    config: {
+      orderLimit: orderLimit,
+      banLimit: banLimit,
+      selfPing: selfPing,
+    },
+  };
+
   res.json({
     success: true,
     message: "Debug information retrieved successfully",
     data: debugInfo,
   });
+});
+
+app.get("/debug/logs", requireAuth, (req, res) => {
+  console.log(`[${chalk.red(`WARN`)}]: Logs accessed.`);
+  logs.push(`[WARN]: Logs accessed.`);
+  res.json(logs);
 });
 
 // ---------- OTHERS ---------- \\
