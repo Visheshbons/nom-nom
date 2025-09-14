@@ -40,7 +40,6 @@
                 <tbody>
                     <% for (let i = 0; i < menu.length; i++) { %>
                         <% if (menu[i].visible) { %>
-                            <% console.log(menu[i], menu[i].stock) %>
                             <tr>
                                 <td><%= menu[i].name %></td>
                                 <td>$<%= menu[i].price.toFixed(2) %></td>

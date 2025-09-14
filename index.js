@@ -21,6 +21,9 @@ const selfPing = false;
 // Store orders in memory (in production, use a database)
 let orders = [];
 
+// Store logs for the "/debug" route
+let logs = [];
+
 // Simple admin authentication (in production, use proper auth)
 const adminCredentials = {
   username: "admin",
@@ -65,6 +68,7 @@ async function verifyPassword(hash, password) {
     }
   } catch (err) {
     console.error(err);
+    logs.push(err);
   }
 }
 
@@ -162,6 +166,7 @@ app.post("/pre-order", (req, res) => {
   };
 
   console.log(order);
+  logs.push(order);
 
   orders.push(order);
 
@@ -187,6 +192,7 @@ app.post("/admin/login", async (req, res) => {
     chalk.yellow("-------######## ADMIN LOGIN ATTEMPT ########--------"),
   );
   console.log();
+  logs.push("-------######## ADMIN LOGIN ATTEMPT ########--------");
   const { username, password } = req.body;
 
   // if (
@@ -206,6 +212,7 @@ app.post("/admin/login", async (req, res) => {
 
   if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
     console.log(`Authentication: [${chalk.green(`PASS`)}]`);
+    logs.push("Authentication: [PASS]");
     const sessionId = Date.now().toString() + Math.random().toString(36);
     adminSessions.add(sessionId);
     res.cookie("adminSession", sessionId, {
@@ -217,10 +224,12 @@ app.post("/admin/login", async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     }); // 24 hours
     console.log(`Login: [${chalk.green(`PASS`)}]`);
+    logs.push("Login: [PASS]");
     res.redirect("/admin");
     // Log in the admin (set session/JWT/etc.)
   } else {
     console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
+    logs.push("Authentication: [FAIL]");
     res.status(401).json({ success: false, error: "Invalid credentials" });
   }
 
@@ -229,6 +238,7 @@ app.post("/admin/login", async (req, res) => {
     chalk.yellow(`-------######## ADMIN LOGIN ATTEMPT ########--------`),
   );
   console.log();
+  logs.push("-------######## ADMIN LOGIN ATTEMPT ########--------");
 });
 
 // Admin logout
@@ -328,8 +338,54 @@ app.get("/about", (req, res) => {
   res.render("about.ejs");
 });
 
+// ---------- CONTACT ---------- \\
 app.get("/contact", (req, res) => {
   res.render("contact.ejs");
+});
+
+// ---------- DEBUG ---------- \\
+app.get("/debug", (req, res) => {
+  res.clearCookie("OrderCount");
+  console.log(`[${chalk.red(`WARN`)}]: Debug route accessed`);
+  logs.push(`[WARN]: Debug route accessed`);
+
+  // Prepare debug information
+  const debugInfo = {
+    timestamp: new Date().toISOString(),
+    server: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      port: port,
+      sessionId: serverSession,
+    },
+    orders: {
+      total: orders.length,
+      pending: orders.filter((o) => o.status === "pending").length,
+      completed: orders.filter((o) => o.status === "completed").length,
+      confirmed: orders.filter((o) => o.status === "confirmed").length,
+    },
+    menu: menu.map((item) => ({
+      name: item.name,
+      stock: item.stock,
+      visible: item.visible,
+      lowStock: item.stock <= 10,
+    })),
+    sessions: {
+      activeAdminSessions: adminSessions.size,
+    },
+    logs: logs.reverse().slice(-50).reverse(), // Return last 50 log entries, newest first
+    config: {
+      orderLimit: orderLimit,
+      banLimit: banLimit,
+      selfPing: selfPing,
+    },
+  };
+
+  res.json({
+    success: true,
+    message: "Debug information retrieved successfully",
+    data: debugInfo,
+  });
 });
 
 // ---------- OTHERS ---------- \\
@@ -340,16 +396,22 @@ app.use((req, res, next) => {
 app.listen(port, async () => {
   console.log(`Server is running on port ${chalk.green(port)}`);
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
+  logs.push(`Server is running on port ${port}`);
+  logs.push(`Server Session ID: ${serverSession}`);
   await selfTest();
   for (let i = 0; i < menu.length; i++) {
     if (menu[i].stock <= 10) {
       console.warn(
         `[${chalk.yellow(`WARN`)}]: Item "${chalk.grey(menu[i].name)}" has only ${chalk.red(menu[i].stock)} in stock`,
       );
+      logs.push(
+        `[WARN]: Item "${menu[i].name}" has only ${menu[i].stock} in stock`,
+      );
     } else {
       console.log(
         `Item "${chalk.grey(menu[i].name)}" has ${chalk.green(menu[i].stock)} in stock`,
       );
+      logs.push(`Item "${menu[i].name}" has ${menu[i].stock} in stock`);
     }
   }
 });
@@ -358,6 +420,7 @@ app.listen(port, async () => {
 // This will bypass the Render free instance server shutdown
 if (selfPing) {
   console.log("SELF PING ACTIVE");
+  console.time("Ping Interval");
   setInterval(() => {
     fetch("https://diminished-rights.onrender.com")
       .then(() => {
@@ -378,6 +441,8 @@ async function selfTest() {
   );
   console.log();
   console.log(`Running Argon2 self-test...`);
+  logs.push("----------########## SELF TEST ##########----------");
+  logs.push("Running Argon2 self-test...");
 
   const testPassword = `testString`;
   let total = 0;
@@ -386,26 +451,32 @@ async function selfTest() {
   const hash1 = await argon2.hash(testPassword);
   if (await verifyPassword(hash1, testPassword)) {
     console.log(`Test 1/5: [${chalk.green("PASS")}]`);
+    logs.push("Test 1/5: [PASS]");
     total++;
   } else {
     console.log(`Test 1/5: [${chalk.red("FAIL")}]`);
+    logs.push("Test 1/5: [FAIL]");
   }
 
   // 2. Different hashes for same input (checking random salt)
   const hash2 = await argon2.hash(testPassword);
   if (hash1 !== hash2) {
     console.log(`Test 2/5: [${chalk.green("PASS")}]`);
+    logs.push("Test 2/5: [PASS]");
     total++;
   } else {
     console.log(`Test 2/5: [${chalk.red("FAIL")}]`);
+    logs.push("Test 2/5: [FAIL]");
   }
 
   // 3. Verify rejects wrong password
   if (!(await verifyPassword(hash1, `wrongPassword`))) {
     console.log(`Test 3/5: [${chalk.green("PASS")}]`);
+    logs.push("Test 3/5: [PASS]");
     total++;
   } else {
     console.log(`Test 3/5: [${chalk.red("FAIL")}]`);
+    logs.push("Test 3/5: [FAIL]");
   }
 
   // 4. Corrupted hash detection (invalid hash string)
@@ -422,6 +493,7 @@ async function selfTest() {
   console.log(
     `Test 4/5: [${corruptedTestPassed ? `${chalk.green("PASS")}` : `${chalk.red("FAIL")}`}]`,
   );
+  logs.push(`Test 4/5: [${corruptedTestPassed ? `PASS` : `FAIL`}]`);
 
   // 5. Timing check - not exact but ensures verification completes
   const start = Date.now();
@@ -429,18 +501,23 @@ async function selfTest() {
   const duration = Date.now() - start;
   if (duration > 0) {
     console.log(`Test 5/5: [${chalk.green("PASS")}]`);
+    logs.push("Test 5/5: [PASS]");
     total++;
   } else {
     console.log(`Test 5/5: [${chalk.red("FAIL")}]`);
+    logs.push("Test 5/5: [FAIL]");
   }
 
   console.log();
   console.log(`Total tests passed: ${chalk.green(total)}`);
   if (total === 5) {
     console.log(chalk.green(`[PASS]`));
+    console.log("[PASS]");
   } else {
     console.log(chalk.red(`[FAIL]`));
     console.log("Inform the developer as soon as possible");
+    logs.push("[FAIL]");
+    logs.push("Inform the developer as soon as possible");
   }
 
   console.log();
@@ -448,4 +525,5 @@ async function selfTest() {
     chalk.yellowBright(`----------########### SELF TEST ###########----------`),
   );
   console.log();
+  logs.push(`----------########## SELF TEST ##########----------`);
 }
