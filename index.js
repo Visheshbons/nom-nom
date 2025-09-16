@@ -1,19 +1,22 @@
-// ---------- INITIALISATION ---------- \\
+// ---------- IMPORTS ---------- \\
 import express from "express";
 import cookieParser from "cookie-parser";
 import argon2, { verify } from "argon2";
+import { body, validationResult } from "express-validator";
 import chalk from "chalk";
+import fs from "fs";
 
 const app = express();
 const port = 3000;
 
+// ---------- EXPRESS APP INITIALISATION ---------- \\
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 
-// ---------- VARIABLES ---------- \\
+// ---------- CONSTANTS & CONFIGURATION ---------- \\
 const orderLimit = 2;
 const banLimit = 5;
 const selfPing = false;
@@ -38,15 +41,41 @@ let orders = [];
 // Store time slot bookings
 let timeSlotBookings = {};
 
-// Store logs for the "/debug" route
-let logs = [];
+// ---------- LOGGING ---------- \\
+const LOG_FILE = "logs.json";
 
-// Simple admin authentication (in production, use proper auth)
-const adminCredentials = {
-  username: "admin",
-  password: "password123",
-};
+// Initialize log file
+fs.writeFileSync(LOG_FILE, "[]");
 
+function addLog(entry) {
+  try {
+    // Serialize Error objects to plain objects
+    if (entry instanceof Error) {
+      entry = {
+        name: entry.name,
+        message: entry.message,
+        stack: entry.stack,
+      };
+    }
+    const logs = JSON.parse(fs.readFileSync(LOG_FILE, "utf8"));
+    logs.push(entry); // <-- Fix: actually add the entry to logs
+    // Keep only last 100 logs
+    if (logs.length > 100) logs.splice(0, logs.length - 100);
+    fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
+  } catch (err) {
+    console.error("Failed to write log:", err);
+  }
+}
+
+function getLogs() {
+  try {
+    return JSON.parse(fs.readFileSync(LOG_FILE, "utf8"));
+  } catch (err) {
+    return [];
+  }
+}
+
+// ---------- ADMIN CONFIG ---------- \\
 const ADMIN_HASH_PASSWORD =
   "$argon2id$v=19$m=65536,t=3,p=4$OhTi43nYfnrFFabeMmUziQ$cfWTaa5o2Z1s6hI2aGwJVR/Xe4AGBCrE9vClzm8lI8w";
 const ADMIN_HASH_USERNAME =
@@ -59,7 +88,7 @@ let serverSession = Math.random().toString(36).substring(2, 15);
 // This helps against cookies being made and used to bypass login
 // This is logged in the server start
 
-// Middleware to check admin authentication
+// ---------- MIDDLEWARES ---------- \\
 function requireAuth(req, res, next) {
   const cookie = req.headers.cookie || "";
   const sessionId = cookie.split("adminSession=")[1]?.split(";")[0];
@@ -85,10 +114,19 @@ async function verifyPassword(hash, password) {
     }
   } catch (err) {
     console.error(err);
-    logs.push(err);
+    addLog(err);
   }
 }
 
+function validateBody(req, res, next) {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+}
+
+// ---------- MENU ---------- \\
 let menu = [
   {
     name: "Cookies",
@@ -148,44 +186,54 @@ app.get("/menu", (req, res) => {
   });
 });
 
-app.post("/pre-order", (req, res) => {
-  const { item, quantity, customerName, customerEmail } = req.body;
-  let userOrders = req.cookies.OrderCount || 0;
+app.post(
+  "/pre-order",
+  [
+    body("item").isString().notEmpty(),
+    body("quantity").isInt({ min: 1 }),
+    body("customerName").isString().notEmpty(),
+    body("customerEmail").isEmail(),
+    validateBody,
+  ],
+  (req, res) => {
+    const { item, quantity, customerName, customerEmail } = req.body;
+    let userOrders = req.cookies.OrderCount || 0;
 
-  // Find the menu item
-  const menuItem = menu.find((m) => m.name === item);
+    // Find the menu item
+    const menuItem = menu.find((m) => m.name === item);
 
-  if (!menuItem) {
-    return res.status(400).send("Invalid menu item");
-  }
+    if (!menuItem) {
+      return res.status(400).send("Invalid menu item");
+    }
 
-  if (userOrders >= orderLimit) {
-    return res.status(400).send("Order limit reached");
-  }
+    if (userOrders >= orderLimit) {
+      return res.status(400).send("Order limit reached");
+    }
 
-  if (menuItem.stock < parseInt(quantity)) {
-    return res.status(400).send("Not enough stock");
-  }
+    if (menuItem.stock < parseInt(quantity)) {
+      return res.status(400).send("Not enough stock");
+    }
 
-  // Store order details in session/cookie for time slot selection
-  const orderDetails = {
-    item: item,
-    quantity: parseInt(quantity),
-    customerName: customerName,
-    customerEmail: customerEmail,
-    price: menuItem.price,
-    total: menuItem.price * parseInt(quantity),
-  };
+    // Store order details in session/cookie for time slot selection
+    const orderDetails = {
+      item: item,
+      quantity: parseInt(quantity),
+      customerName: customerName,
+      customerEmail: customerEmail,
+      price: menuItem.price,
+      total: menuItem.price * parseInt(quantity),
+    };
 
-  // Store order details in cookie for next step
-  res.cookie("pendingOrder", JSON.stringify(orderDetails), {
-    maxAge: 15 * 60 * 1000, // 15 minutes
-    httpOnly: false,
-  });
+    // Store order details in cookie for next step
+    res.cookie("pendingOrder", JSON.stringify(orderDetails), {
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      httpOnly: false,
+    });
 
-  // Redirect to time slot selection
-  res.redirect("/select-time");
-});
+    // Redirect to time slot selection
+    res.redirect("/select-time");
+  },
+);
 
 // Time slot selection page
 app.get("/select-time", (req, res) => {
@@ -215,61 +263,70 @@ app.get("/select-time", (req, res) => {
 });
 
 // Confirm order with time slot
-app.post("/confirm-order", (req, res) => {
-  const { timeSlot } = req.body;
-  const pendingOrder = req.cookies.pendingOrder;
+app.post(
+  "/confirm-order",
+  [
+    body("timeSlot")
+      .isString()
+      .custom((value) => TIME_SLOTS.includes(value)),
+    validateBody,
+  ],
+  (req, res) => {
+    const { timeSlot } = req.body;
+    const pendingOrder = req.cookies.pendingOrder;
 
-  if (!pendingOrder) {
-    return res.status(400).send("No pending order found");
-  }
+    if (!pendingOrder) {
+      return res.status(400).send("No pending order found");
+    }
 
-  if (!timeSlot || !TIME_SLOTS.includes(timeSlot)) {
-    return res.status(400).send("Invalid time slot");
-  }
+    if (!timeSlot || !TIME_SLOTS.includes(timeSlot)) {
+      return res.status(400).send("Invalid time slot");
+    }
 
-  // No longer needed due to frontend validation
-  // if (timeSlotBookings[timeSlot]) {
-  //   return res.status(400).send("Time slot already booked");
-  // }
+    // No longer needed due to frontend validation
+    // if (timeSlotBookings[timeSlot]) {
+    //   return res.status(400).send("Time slot already booked");
+    // }
 
-  const orderDetails = JSON.parse(pendingOrder);
-  let userOrders = req.cookies.OrderCount || 0;
+    const orderDetails = JSON.parse(pendingOrder);
+    let userOrders = req.cookies.OrderCount || 0;
 
-  // Find the menu item and update stock
-  const menuItem = menu.find((m) => m.name === orderDetails.item);
-  if (!menuItem || menuItem.stock < orderDetails.quantity) {
-    return res.status(400).send("Item no longer available");
-  }
+    // Find the menu item and update stock
+    const menuItem = menu.find((m) => m.name === orderDetails.item);
+    if (!menuItem || menuItem.stock < orderDetails.quantity) {
+      return res.status(400).send("Item no longer available");
+    }
 
-  menuItem.stock -= orderDetails.quantity;
+    menuItem.stock -= orderDetails.quantity;
 
-  // Book the time slot
-  timeSlotBookings[timeSlot] = true;
+    // Book the time slot
+    timeSlotBookings[timeSlot] = true;
 
-  // Create final order
-  const order = {
-    id: orders.length + 1,
-    item: orderDetails.item,
-    quantity: orderDetails.quantity,
-    customerName: orderDetails.customerName,
-    customerEmail: orderDetails.customerEmail,
-    price: orderDetails.price,
-    total: orderDetails.total,
-    timeSlot: timeSlot,
-    timestamp: new Date(),
-    status: "pending",
-  };
+    // Create final order
+    const order = {
+      id: orders.length + 1,
+      item: orderDetails.item,
+      quantity: orderDetails.quantity,
+      customerName: orderDetails.customerName,
+      customerEmail: orderDetails.customerEmail,
+      price: orderDetails.price,
+      total: orderDetails.total,
+      timeSlot: timeSlot,
+      timestamp: new Date(),
+      status: "pending",
+    };
 
-  console.log(order);
-  logs.push(order);
+    console.log(order);
+    addLog(order);
 
-  orders.push(order);
-  userOrders++;
+    orders.push(order);
+    userOrders++;
 
-  // Clear pending order and update user order count
-  res.clearCookie("pendingOrder");
-  res.cookie("OrderCount", userOrders).redirect("/menu?success=true");
-});
+    // Clear pending order and update user order count
+    res.clearCookie("pendingOrder");
+    res.cookie("OrderCount", userOrders).redirect("/menu?success=true");
+  },
+);
 
 app.get("/orders", (req, res) => {
   res.json(orders);
@@ -293,60 +350,68 @@ app.get("/admin/login", (req, res) => {
 });
 
 // Admin login POST
-app.post("/admin/login", async (req, res) => {
-  console.log();
-  console.log(
-    chalk.yellow("-------######## ADMIN LOGIN ATTEMPT ########--------"),
-  );
-  console.log();
-  logs.push("-------######## ADMIN LOGIN ATTEMPT ########--------");
-  const { username, password } = req.body;
+app.post(
+  "/admin/login",
+  [
+    body("username").isString().notEmpty(),
+    body("password").isString().notEmpty(),
+    validateBody,
+  ],
+  async (req, res) => {
+    console.log();
+    console.log(
+      chalk.yellow("-------######## ADMIN LOGIN ATTEMPT ########--------"),
+    );
+    console.log();
+    addLog("-------######## ADMIN LOGIN ATTEMPT ########--------");
+    const { username, password } = req.body;
 
-  // if (
-  //   username === adminCredentials.username &&
-  //   password === ADMIN_HASH_PASSWORD
-  // ) {
-  //   const sessionId = Date.now().toString() + Math.random().toString(36);
-  //   adminSessions.add(sessionId);
-  //   res.cookie("adminSession", sessionId, {
-  //     httpOnly: true,
-  //     maxAge: 24 * 60 * 60 * 1000,
-  //   }); // 24 hours
-  //   res.redirect("/admin");
-  // } else {
-  //   res.render("admin-login.ejs", { error: "Invalid credentials" });
-  // }
+    // if (
+    //   username === adminCredentials.username &&
+    //   password === ADMIN_HASH_PASSWORD
+    // ) {
+    //   const sessionId = Date.now().toString() + Math.random().toString(36);
+    //   adminSessions.add(sessionId);
+    //   res.cookie("adminSession", sessionId, {
+    //     httpOnly: true,
+    //     maxAge: 24 * 60 * 60 * 1000,
+    //   }); // 24 hours
+    //   res.redirect("/admin");
+    // } else {
+    //   res.render("admin-login.ejs", { error: "Invalid credentials" });
+    // }
 
-  if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
-    console.log(`Authentication: [${chalk.green(`PASS`)}]`);
-    logs.push("Authentication: [PASS]");
-    const sessionId = Date.now().toString() + Math.random().toString(36);
-    adminSessions.add(sessionId);
-    res.cookie("adminSession", sessionId, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    }); // 24 hours
-    res.cookie("serverSession", serverSession, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    }); // 24 hours
-    console.log(`Login: [${chalk.green(`PASS`)}]`);
-    logs.push("Login: [PASS]");
-    res.redirect("/admin");
-    // Log in the admin (set session/JWT/etc.)
-  } else {
-    console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
-    logs.push("Authentication: [FAIL]");
-    res.status(401).json({ success: false, error: "Invalid credentials" });
-  }
+    if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
+      console.log(`Authentication: [${chalk.green(`PASS`)}]`);
+      addLog("Authentication: [PASS]");
+      const sessionId = Date.now().toString() + Math.random().toString(36);
+      adminSessions.add(sessionId);
+      res.cookie("adminSession", sessionId, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      }); // 24 hours
+      res.cookie("serverSession", serverSession, {
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      }); // 24 hours
+      console.log(`Login: [${chalk.green(`PASS`)}]`);
+      addLog("Login: [PASS]");
+      res.redirect("/admin");
+      // Log in the admin (set session/JWT/etc.)
+    } else {
+      console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
+      addLog("Authentication: [FAIL]");
+      res.status(401).json({ success: false, error: "Invalid credentials" });
+    }
 
-  console.log();
-  console.log(
-    chalk.yellow(`-------######## ADMIN LOGIN ATTEMPT ########--------`),
-  );
-  console.log();
-  logs.push("-------######## ADMIN LOGIN ATTEMPT ########--------");
-});
+    console.log();
+    console.log(
+      chalk.yellow(`-------######## ADMIN LOGIN ATTEMPT ########--------`),
+    );
+    console.log();
+    addLog("-------######## ADMIN LOGIN ATTEMPT ########--------");
+  },
+);
 
 // Admin logout
 app.get("/admin/logout", (req, res) => {
@@ -377,21 +442,26 @@ app.get("/admin", requireAuth, (req, res) => {
 });
 
 // Update order status
-app.post("/admin/orders/:id/status", requireAuth, (req, res) => {
-  const orderId = parseInt(req.params.id);
-  const { status } = req.body;
+app.post(
+  "/admin/orders/:id/status",
+  requireAuth,
+  [body("status").isString().notEmpty(), validateBody],
+  (req, res) => {
+    const orderId = parseInt(req.params.id);
+    const { status } = req.body;
 
-  const order = orders.find((o) => o.id === orderId);
-  if (order) {
-    // If order is being cancelled, free up the time slot
-    if (status === "cancelled" && order.timeSlot) {
-      delete timeSlotBookings[order.timeSlot];
+    const order = orders.find((o) => o.id === orderId);
+    if (order) {
+      // If order is being cancelled, free up the time slot
+      if (status === "cancelled" && order.timeSlot) {
+        delete timeSlotBookings[order.timeSlot];
+      }
+      order.status = status;
     }
-    order.status = status;
-  }
 
-  res.redirect("/admin");
-});
+    res.redirect("/admin");
+  },
+);
 
 // Delete order
 app.delete("/admin/orders/:id", requireAuth, (req, res) => {
@@ -423,33 +493,42 @@ app.get("/admin/orders/:id", requireAuth, (req, res) => {
   }
 });
 
-app.post("/confirm-order/:id", (req, res) => {
-  const orderId = parseInt(req.params.id);
+app.post(
+  "/confirm-order/:id",
+  [body("status").optional().isString(), validateBody],
+  (req, res) => {
+    const orderId = parseInt(req.params.id);
 
-  const order = orders.find((o) => o.id === orderId);
+    const order = orders.find((o) => o.id === orderId);
 
-  if (!order) {
-    return res.status(404).send("Order not found");
-  }
+    if (!order) {
+      return res.status(404).send("Order not found");
+    }
 
-  order.status = "confirmed";
+    order.status = "confirmed";
 
-  res.json(order);
-});
+    res.json(order);
+  },
+);
 
 // Cancel order and free up time slot
-app.post("/admin/orders/:id/cancel", requireAuth, (req, res) => {
-  const orderId = parseInt(req.params.id);
-  const order = orders.find((o) => o.id === orderId);
+app.post(
+  "/admin/orders/:id/cancel",
+  requireAuth,
+  [validateBody],
+  (req, res) => {
+    const orderId = parseInt(req.params.id);
+    const order = orders.find((o) => o.id === orderId);
 
-  if (order && order.timeSlot) {
-    // Free up the time slot
-    delete timeSlotBookings[order.timeSlot];
-    order.status = "cancelled";
-  }
+    if (order && order.timeSlot) {
+      // Free up the time slot
+      delete timeSlotBookings[order.timeSlot];
+      order.status = "cancelled";
+    }
 
-  res.redirect("/admin");
-});
+    res.redirect("/admin");
+  },
+);
 
 app.get("/orders/:id", (req, res) => {
   const orderId = parseInt(req.params.id);
@@ -484,10 +563,10 @@ app.get("/debug", requireAuth, (req, res) => {
   const reload = req.query.reload === "true";
   if (reload != "true") {
     console.log(`[${chalk.red(`WARN`)}]: Debug route accessed`);
-    logs.push(`[WARN]: Debug route accessed`);
+    addLog(`[WARN]: Debug route accessed`);
   }
 
-  const logsToDisplay = [...logs].slice(-50);
+  const logsToDisplay = getLogs().slice(-50);
 
   // Prepare debug information
   const debugInfo = {
@@ -539,7 +618,7 @@ app.get("/debug", requireAuth, (req, res) => {
 // Debug API endpoint for JSON response
 app.get("/debug/api", (req, res) => {
   console.log(`[${chalk.red(`WARN`)}]: Debug API route accessed`);
-  logs.push(`[WARN]: Debug API route accessed`);
+  addLog(`[WARN]: Debug API route accessed`);
 
   // Prepare debug information
   const debugInfo = {
@@ -577,7 +656,7 @@ app.get("/debug/api", (req, res) => {
     sessions: {
       activeAdminSessions: adminSessions.size,
     },
-    logs: logs.slice(-50).reverse(), // Return last 50 log entries, newest first
+    logs: getLogs().slice(-50).reverse(), // Return last 50 log entries, newest first
     config: {
       orderLimit: orderLimit,
       banLimit: banLimit,
@@ -594,8 +673,8 @@ app.get("/debug/api", (req, res) => {
 
 app.get("/debug/logs", requireAuth, (req, res) => {
   console.log(`[${chalk.red(`WARN`)}]: Logs accessed.`);
-  logs.push(`[WARN]: Logs accessed.`);
-  res.json(logs);
+  addLog(`[WARN]: Logs accessed.`);
+  res.json(getLogs());
 });
 
 // ---------- OTHERS ---------- \\
@@ -606,8 +685,8 @@ app.use((req, res, next) => {
 app.listen(port, async () => {
   console.log(`Server is running on port ${chalk.green(port)}`);
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
-  logs.push(`Server is running on port ${port}`);
-  logs.push(`Server Session ID: ${serverSession}`);
+  addLog(`Server is running on port ${port}`);
+  addLog(`Server Session ID: ${serverSession}`);
   await Argon2SelfTest();
   await GeneralTest();
   for (let i = 0; i < menu.length; i++) {
@@ -615,7 +694,7 @@ app.listen(port, async () => {
       console.warn(
         `[${chalk.yellow(`WARN`)}]: Item "${chalk.grey(menu[i].name)}" has only ${chalk.red(menu[i].stock)} in stock`,
       );
-      logs.push(
+      addLog(
         `[WARN]: Item "${menu[i].name}" has only ${menu[i].stock} in stock`,
       );
     } else {
@@ -624,15 +703,23 @@ app.listen(port, async () => {
       console.log(
         `Item "${chalk.grey(menu[i].name)}" has ${chalk.green(stockDisplay)} in stock`,
       );
-      logs.push(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
+      addLog(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
     }
   }
+
   setInterval(
     async () => {
       await GeneralTest();
     },
     1 * 60 * 60 * 1000,
   ); // Every hour
+
+  setInterval(
+    () => {
+      serverSession = Math.random().toString(36).substring(2, 15);
+    },
+    1 * 12 * 60 * 60 * 1000,
+  ); // Every 12 hours
 });
 
 // ---------- SELF PING ---------- \\
@@ -653,6 +740,7 @@ if (selfPing) {
   }, 600000); // 600,000 milliseconds = 10 minutes
 }
 
+// ---------- TESTS ---------- \\
 async function Argon2SelfTest() {
   console.log();
   console.log(
@@ -662,8 +750,8 @@ async function Argon2SelfTest() {
   );
   console.log();
   console.log(`Running Argon2 self-test...`);
-  logs.push("----------########## ARGON2 SELF TEST ##########----------");
-  logs.push("Running Argon2 self-test...");
+  addLog("----------########## ARGON2 SELF TEST ##########----------");
+  addLog("Running Argon2 self-test...");
 
   const testPassword = `testString`;
   let total = 0;
@@ -672,32 +760,32 @@ async function Argon2SelfTest() {
   const hash1 = await argon2.hash(testPassword);
   if (await verifyPassword(hash1, testPassword)) {
     console.log(`Test 1/5: [${chalk.green("PASS")}]`);
-    logs.push("Test 1/5: [PASS]");
+    addLog("Test 1/5: [PASS]");
     total++;
   } else {
     console.log(`Test 1/5: [${chalk.red("FAIL")}]`);
-    logs.push("Test 1/5: [FAIL]");
+    addLog("Test 1/5: [FAIL]");
   }
 
   // 2. Different hashes for same input (checking random salt)
   const hash2 = await argon2.hash(testPassword);
   if (hash1 !== hash2) {
     console.log(`Test 2/5: [${chalk.green("PASS")}]`);
-    logs.push("Test 2/5: [PASS]");
+    addLog("Test 2/5: [PASS]");
     total++;
   } else {
     console.log(`Test 2/5: [${chalk.red("FAIL")}]`);
-    logs.push("Test 2/5: [FAIL]");
+    addLog("Test 2/5: [FAIL]");
   }
 
   // 3. Verify rejects wrong password
   if (!(await verifyPassword(hash1, `wrongPassword`))) {
     console.log(`Test 3/5: [${chalk.green("PASS")}]`);
-    logs.push("Test 3/5: [PASS]");
+    addLog("Test 3/5: [PASS]");
     total++;
   } else {
     console.log(`Test 3/5: [${chalk.red("FAIL")}]`);
-    logs.push("Test 3/5: [FAIL]");
+    addLog("Test 3/5: [FAIL]");
   }
 
   // 4. Corrupted hash detection (invalid hash string)
@@ -714,7 +802,7 @@ async function Argon2SelfTest() {
   console.log(
     `Test 4/5: [${corruptedTestPassed ? `${chalk.green("PASS")}` : `${chalk.red("FAIL")}`}]`,
   );
-  logs.push(`Test 4/5: [${corruptedTestPassed ? `PASS` : `FAIL`}]`);
+  addLog(`Test 4/5: [${corruptedTestPassed ? `PASS` : `FAIL`}]`);
 
   // 5. Timing check - not exact but ensures verification completes
   const start = Date.now();
@@ -722,23 +810,23 @@ async function Argon2SelfTest() {
   const duration = Date.now() - start;
   if (duration > 0) {
     console.log(`Test 5/5: [${chalk.green("PASS")}]`);
-    logs.push("Test 5/5: [PASS]");
+    addLog("Test 5/5: [PASS]");
     total++;
   } else {
     console.log(`Test 5/5: [${chalk.red("FAIL")}]`);
-    logs.push("Test 5/5: [FAIL]");
+    addLog("Test 5/5: [FAIL]");
   }
 
   console.log();
   console.log(`Total tests passed: ${chalk.green(total)}`);
   if (total === 5) {
     console.log(chalk.green(`[PASS]`));
-    logs.push("[PASS]");
+    addLog("[PASS]");
   } else {
     console.log(chalk.red(`[FAIL]`));
     console.log("Inform the developer as soon as possible");
-    logs.push("[FAIL]");
-    logs.push("Inform the developer as soon as possible");
+    addLog("[FAIL]");
+    addLog("Inform the developer as soon as possible");
   }
 
   console.log();
@@ -748,7 +836,7 @@ async function Argon2SelfTest() {
     ),
   );
   console.log();
-  logs.push(`----------########## ARGON2 SELF TEST ##########----------`);
+  addLog(`----------########## ARGON2 SELF TEST ##########----------`);
 }
 
 async function GeneralTest() {
@@ -759,7 +847,9 @@ async function GeneralTest() {
     ),
   );
   console.log();
-  logs.push(`----------########## GENERAL SELF TESTS ##########----------`);
+  addLog(`----------########## GENERAL SELF TESTS ##########----------`);
+
+  const logs = getLogs();
 
   // Define all tests as objects with a description and a test function
   const tests = [
@@ -967,8 +1057,8 @@ async function GeneralTest() {
     {
       description: "All admin credentials are strings",
       test: () =>
-        typeof adminCredentials.username === "string" &&
-        typeof adminCredentials.password === "string",
+        typeof ADMIN_HASH_USERNAME === "string" &&
+        typeof ADMIN_HASH_PASSWORD === "string",
     },
     {
       description:
@@ -1064,12 +1154,12 @@ async function GeneralTest() {
     const status = result ? chalk.green("PASS") : chalk.red("FAIL");
     if (result) {
       console.log(`General Test (${i + 1}/${totalTests}): [${status}]`);
-      logs.push(`General Test (${i + 1}/${totalTests}): [PASS]`);
+      addLog(`General Test (${i + 1}/${totalTests}): [PASS]`);
     } else {
       console.log(
         `General Test (${i + 1}/${totalTests}): [${status}] ${tests[i].description}`,
       );
-      logs.push(
+      addLog(
         `General Test (${i + 1}/${totalTests}): [FAIL] ${tests[i].description}`,
       );
     }
@@ -1080,7 +1170,7 @@ async function GeneralTest() {
   const summaryStatus =
     passed === totalTests ? chalk.green("PASS") : chalk.red("FAIL");
   console.log(`General Test ${passed}/${totalTests}: [${summaryStatus}]`);
-  logs.push(
+  addLog(
     `General Test (${passed}/${totalTests}): ${passed === totalTests ? "[PASS]" : "[FAIL]"}`,
   );
   console.log();
@@ -1090,5 +1180,5 @@ async function GeneralTest() {
     ),
   );
   console.log();
-  logs.push(`----------########## GENERAL SELF TESTS ##########----------`);
+  addLog(`----------########## GENERAL SELF TESTS ##########----------`);
 }
