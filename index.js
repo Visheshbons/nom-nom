@@ -7,7 +7,7 @@ import chalk from "chalk";
 import fs from "fs";
 
 const app = express();
-const port = 3000;
+const port = 3000 || process.env.PORT;
 
 // ---------- EXPRESS APP INITIALISATION ---------- \\
 app.use(cookieParser());
