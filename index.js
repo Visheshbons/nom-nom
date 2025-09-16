@@ -126,7 +126,7 @@ let menu = [
   {
     name: "Gambling",
     price: 2,
-    stock: Math.MAX_SAFE_INTEGER,
+    stock: 2500,
     visible: false,
   },
 ];
@@ -627,6 +627,12 @@ app.listen(port, async () => {
       logs.push(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
     }
   }
+  setInterval(
+    async () => {
+      await GeneralTest();
+    },
+    1 * 60 * 60 * 1000,
+  ); // Every hour
 });
 
 // ---------- SELF PING ---------- \\
@@ -765,6 +771,32 @@ async function GeneralTest() {
       },
     },
     {
+      description: "No menu item has negative price or stock",
+      test: () => menu.every((item) => item.price >= 0 && item.stock >= 0),
+    },
+    {
+      description: "No duplicate custom keys in menu items",
+      test: () =>
+        menu
+          .filter((item) => item.custom)
+          .every((item) => {
+            const keys = Object.keys(item.custom);
+            return keys.length === new Set(keys).size;
+          }),
+    },
+    {
+      description:
+        "All menu items with custom.sauces have valid sauce values (number >= 0)",
+      test: () =>
+        menu
+          .filter((item) => item.custom && item.custom.sauces)
+          .every((item) =>
+            Object.values(item.custom.sauces).every(
+              (val) => typeof val === "number" && val >= 0,
+            ),
+          ),
+    },
+    {
       description: "All menu items have price > 0 and stock >= 0",
       test: () =>
         menu.every(
@@ -816,12 +848,39 @@ async function GeneralTest() {
       },
     },
     {
+      description: "No order has quantity <= 0",
+      test: () =>
+        orders.every((order) => order.quantity > 0) || orders.length === 0,
+    },
+    {
+      description: "No order has total < price * quantity",
+      test: () =>
+        orders.every((order) => order.total >= order.price * order.quantity) ||
+        orders.length === 0,
+    },
+    {
       description:
         "Time slot bookings object only contains valid time slots as keys",
       test: () =>
         Object.keys(timeSlotBookings).every((slot) =>
           TIME_SLOTS.includes(slot),
         ),
+    },
+    {
+      description: "No booked time slot is outside TIME_SLOTS",
+      test: () =>
+        Object.keys(timeSlotBookings).every((slot) =>
+          TIME_SLOTS.includes(slot),
+        ),
+    },
+    {
+      description: "No booked time slot is booked more than once",
+      test: () => {
+        const bookedSlots = Object.keys(timeSlotBookings).filter(
+          (slot) => timeSlotBookings[slot],
+        );
+        return bookedSlots.length === new Set(bookedSlots).size;
+      },
     },
     {
       description: "Admin sessions is a Set",
@@ -905,6 +964,95 @@ async function GeneralTest() {
           (order) => !order.timeSlot || TIME_SLOTS.includes(order.timeSlot),
         ) || orders.length === 0,
     },
+    {
+      description: "All admin credentials are strings",
+      test: () =>
+        typeof adminCredentials.username === "string" &&
+        typeof adminCredentials.password === "string",
+    },
+    {
+      description:
+        "All orders have a valid timestamp (Date object or parseable string)",
+      test: () =>
+        orders.every(
+          (order) =>
+            order.timestamp instanceof Date ||
+            !isNaN(Date.parse(order.timestamp)),
+        ) || orders.length === 0,
+    },
+    {
+      description: "No order has empty customerName or customerEmail",
+      test: () =>
+        orders.every((order) => order.customerName && order.customerEmail) ||
+        orders.length === 0,
+    },
+    {
+      description: "All menu items are visible or invisible (no undefined)",
+      test: () => menu.every((item) => typeof item.visible === "boolean"),
+    },
+    {
+      description: "No menu item has undefined name, price, or stock",
+      test: () =>
+        menu.every(
+          (item) =>
+            item.name !== undefined &&
+            item.price !== undefined &&
+            item.stock !== undefined,
+        ),
+    },
+    {
+      description: "Order IDs are unique",
+      test: () => {
+        const ids = orders.map((order) => order.id);
+        return ids.length === new Set(ids).size;
+      },
+    },
+    {
+      description: "No order has a timeSlot that is not booked",
+      test: () =>
+        orders.every(
+          (order) => !order.timeSlot || timeSlotBookings[order.timeSlot],
+        ) || orders.length === 0,
+    },
+    {
+      description:
+        "No order has a status other than pending, completed, confirmed, cancelled",
+      test: () => {
+        const validStatuses = [
+          "pending",
+          "completed",
+          "confirmed",
+          "cancelled",
+        ];
+        return (
+          orders.every((order) => validStatuses.includes(order.status)) ||
+          orders.length === 0
+        );
+      },
+    },
+    {
+      description: "No menu item has a non-string name",
+      test: () => menu.every((item) => typeof item.name === "string"),
+    },
+    {
+      description: "No menu item has a non-number price",
+      test: () => menu.every((item) => typeof item.price === "number"),
+    },
+    {
+      description: "No menu item has a non-number stock",
+      test: () => menu.every((item) => typeof item.stock === "number"),
+    },
+    {
+      description: "No menu item has a non-boolean visible property",
+      test: () => menu.every((item) => typeof item.visible === "boolean"),
+    },
+    {
+      description: "No menu item has a custom property that is not an object",
+      test: () =>
+        menu
+          .filter((item) => item.custom)
+          .every((item) => typeof item.custom === "object"),
+    },
   ];
 
   const totalTests = tests.length;
@@ -914,10 +1062,17 @@ async function GeneralTest() {
     const result = !!tests[i].test();
     if (result) passed++;
     const status = result ? chalk.green("PASS") : chalk.red("FAIL");
-    console.log(`General Test (${i + 1}/${totalTests}): [${status}]`);
-    logs.push(
-      `General Test (${i + 1}/${totalTests}): [${result ? "[PASS]" : "[FAIL]"}]`,
-    );
+    if (result) {
+      console.log(`General Test (${i + 1}/${totalTests}): [${status}]`);
+      logs.push(`General Test (${i + 1}/${totalTests}): [PASS]`);
+    } else {
+      console.log(
+        `General Test (${i + 1}/${totalTests}): [${status}] ${tests[i].description}`,
+      );
+      logs.push(
+        `General Test (${i + 1}/${totalTests}): [FAIL] ${tests[i].description}`,
+      );
+    }
   }
 
   // Summary
