@@ -7,7 +7,7 @@ import chalk from "chalk";
 import fs from "fs";
 
 const app = express();
-const port = 3000 || process.env.PORT;
+const PORT = 3000 || process.env.PORT;
 
 // ---------- EXPRESS APP INITIALISATION ---------- \\
 app.use(cookieParser());
@@ -570,7 +570,7 @@ app.get("/debug", requireAuth, (req, res) => {
     server: {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      port: port,
+      port: PORT,
       sessionId: serverSession,
     },
     orders: {
@@ -622,7 +622,7 @@ app.get("/debug/api", (req, res) => {
     server: {
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      port: port,
+      port: PORT,
       sessionId: serverSession,
     },
     orders: {
@@ -690,10 +690,10 @@ function errorHandler(err, req, res, next) {
 }
 app.use(errorHandler);
 
-app.listen(port, async () => {
-  console.log(`Server is running on port ${chalk.green(port)}`);
+app.listen(PORT, async () => {
+  console.log(`Server is running on port ${chalk.green(PORT)}`);
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
-  addLog(`Server is running on port ${port}`);
+  addLog(`Server is running on port ${PORT}`);
   addLog(`Server Session ID: ${serverSession}`);
 
   await Argon2SelfTest();
@@ -1160,7 +1160,7 @@ async function GeneralTest() {
     },
     {
       description: "Server is listening on the configured port",
-      test: () => typeof port === "number" && port > 0,
+      test: () => typeof PORT === "number" && PORT > 0,
     },
     {
       description: "Logging middleware is present",
