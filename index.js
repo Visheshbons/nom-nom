@@ -144,10 +144,6 @@ let menu = [
       oreos: 25,
       sprinkles: 25,
       marshmallows: 25,
-      mnms: 25,
-      oreos: 25,
-      sprinkles: 25,
-      marshmallows: 25,
       sauces: {
         choco: 50,
         caramel: 50,
@@ -682,11 +678,24 @@ app.use((req, res, next) => {
   res.send("ERR_404_NOT_FOUND");
 });
 
+function errorHandler(err, req, res, next) {
+  // Keep logs and behavior consistent with your previous handler
+  console.error(err && err.stack ? err.stack : err);
+  try {
+    addLog(err || "Error: unknown");
+  } catch (e) {
+    // swallow logging errors — we don't want to throw from the error handler
+  }
+  res.status(500).send("Something broke!");
+}
+app.use(errorHandler);
+
 app.listen(port, async () => {
   console.log(`Server is running on port ${chalk.green(port)}`);
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
   addLog(`Server is running on port ${port}`);
   addLog(`Server Session ID: ${serverSession}`);
+
   await Argon2SelfTest();
   await GeneralTest();
   for (let i = 0; i < menu.length; i++) {
@@ -759,33 +768,37 @@ async function Argon2SelfTest() {
   // 1. Basic hash-verify test
   const hash1 = await argon2.hash(testPassword);
   if (await verifyPassword(hash1, testPassword)) {
-    console.log(`Test 1/5: [${chalk.green("PASS")}]`);
-    addLog("Test 1/5: [PASS]");
+    console.log(`Test 1/5: [${chalk.green("PASS")}] Password Verification`);
+    addLog("Test 1/5: [PASS] Password Verification");
     total++;
   } else {
-    console.log(`Test 1/5: [${chalk.red("FAIL")}]`);
-    addLog("Test 1/5: [FAIL]");
+    console.log(`Test 1/5: [${chalk.red("FAIL")}] Password Verification`);
+    addLog("Test 1/5: [FAIL] Password Verification");
   }
 
   // 2. Different hashes for same input (checking random salt)
   const hash2 = await argon2.hash(testPassword);
   if (hash1 !== hash2) {
-    console.log(`Test 2/5: [${chalk.green("PASS")}]`);
-    addLog("Test 2/5: [PASS]");
+    console.log(`Test 2/5: [${chalk.green("PASS")}] Random Salt`);
+    addLog("Test 2/5: [PASS] Random Salt");
     total++;
   } else {
-    console.log(`Test 2/5: [${chalk.red("FAIL")}]`);
-    addLog("Test 2/5: [FAIL]");
+    console.log(`Test 2/5: [${chalk.red("FAIL")}] Random Salt`);
+    addLog("Test 2/5: [FAIL] Random Salt");
   }
 
   // 3. Verify rejects wrong password
   if (!(await verifyPassword(hash1, `wrongPassword`))) {
-    console.log(`Test 3/5: [${chalk.green("PASS")}]`);
-    addLog("Test 3/5: [PASS]");
+    console.log(
+      `Test 3/5: [${chalk.green("PASS")}] Incorrect Password Detection`,
+    );
+    addLog("Test 3/5: [PASS] Incorrect Password Detection");
     total++;
   } else {
-    console.log(`Test 3/5: [${chalk.red("FAIL")}]`);
-    addLog("Test 3/5: [FAIL]");
+    console.log(
+      `Test 3/5: [${chalk.red("FAIL")}] Incorrect Password Detection`,
+    );
+    addLog("Test 3/5: [FAIL] Incorrect Password Detection");
   }
 
   // 4. Corrupted hash detection (invalid hash string)
@@ -800,21 +813,23 @@ async function Argon2SelfTest() {
     total++;
   }
   console.log(
-    `Test 4/5: [${corruptedTestPassed ? `${chalk.green("PASS")}` : `${chalk.red("FAIL")}`}]`,
+    `Test 4/5: [${corruptedTestPassed ? `${chalk.green("PASS")}` : `${chalk.red("FAIL")}`}] Corrupted Hash Detection`,
   );
-  addLog(`Test 4/5: [${corruptedTestPassed ? `PASS` : `FAIL`}]`);
+  addLog(
+    `Test 4/5: [${corruptedTestPassed ? `PASS` : `FAIL`}] Corrupted Hash Detection`,
+  );
 
   // 5. Timing check - not exact but ensures verification completes
   const start = Date.now();
   await verifyPassword(hash1, testPassword);
   const duration = Date.now() - start;
   if (duration > 0) {
-    console.log(`Test 5/5: [${chalk.green("PASS")}]`);
-    addLog("Test 5/5: [PASS]");
+    console.log(`Test 5/5: [${chalk.green("PASS")}] Timing Check`);
+    addLog("Test 5/5: [PASS] Timing Check");
     total++;
   } else {
-    console.log(`Test 5/5: [${chalk.red("FAIL")}]`);
-    addLog("Test 5/5: [FAIL]");
+    console.log(`Test 5/5: [${chalk.red("FAIL")}] Timing Check`);
+    addLog("Test 5/5: [FAIL] Timing Check");
   }
 
   console.log();
@@ -1143,6 +1158,18 @@ async function GeneralTest() {
           .filter((item) => item.custom)
           .every((item) => typeof item.custom === "object"),
     },
+    {
+      description: "Server is listening on the configured port",
+      test: () => typeof port === "number" && port > 0,
+    },
+    {
+      description: "Logging middleware is present",
+      test: () => typeof addLog === "function" && typeof getLogs === "function",
+    },
+    {
+      description: "Session management is enabled",
+      test: () => typeof serverSession === "string" && serverSession.length > 0,
+    },
   ];
 
   const totalTests = tests.length;
@@ -1153,8 +1180,12 @@ async function GeneralTest() {
     if (result) passed++;
     const status = result ? chalk.green("PASS") : chalk.red("FAIL");
     if (result) {
-      console.log(`General Test (${i + 1}/${totalTests}): [${status}]`);
-      addLog(`General Test (${i + 1}/${totalTests}): [PASS]`);
+      console.log(
+        `General Test (${i + 1}/${totalTests}): [${status}] ${tests[i].description}`,
+      );
+      addLog(
+        `General Test (${i + 1}/${totalTests}): [PASS] ${tests[i].description}`,
+      );
     } else {
       console.log(
         `General Test (${i + 1}/${totalTests}): [${status}] ${tests[i].description}`,
