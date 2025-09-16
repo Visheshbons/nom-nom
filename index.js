@@ -197,6 +197,11 @@ app.get("/select-time", (req, res) => {
 
   const orderDetails = JSON.parse(pendingOrder);
 
+  const userOrder = orders.find(
+    (o) => o.customerEmail === orderDetails.customerEmail,
+  );
+  const userBookedSlot = userOrder ? userOrder.timeSlot : null;
+
   // Get available time slots (not booked)
   const availableSlots = TIME_SLOTS.filter((slot) => !timeSlotBookings[slot]);
 
@@ -205,6 +210,7 @@ app.get("/select-time", (req, res) => {
     timeSlots: TIME_SLOTS,
     availableSlots: availableSlots,
     bookedSlots: timeSlotBookings,
+    userBookedSlot: userBookedSlot,
   });
 });
 
@@ -221,9 +227,10 @@ app.post("/confirm-order", (req, res) => {
     return res.status(400).send("Invalid time slot");
   }
 
-  if (timeSlotBookings[timeSlot]) {
-    return res.status(400).send("Time slot already booked");
-  }
+  // No longer needed due to frontend validation
+  // if (timeSlotBookings[timeSlot]) {
+  //   return res.status(400).send("Time slot already booked");
+  // }
 
   const orderDetails = JSON.parse(pendingOrder);
   let userOrders = req.cookies.OrderCount || 0;
@@ -617,65 +624,7 @@ app.listen(port, async () => {
       logs.push(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
     }
   }
-
-  // Start periodic cleanup of expired orders
-  startPeriodicCleanup();
 });
-
-// ---------- PERIODIC CLEANUP ---------- \\
-function startPeriodicCleanup() {
-  // Clean up every 5 minutes
-  setInterval(
-    () => {
-      const now = Date.now();
-      const expiredThreshold = 15 * 60 * 1000; // 15 minutes
-
-      // Find orders older than 15 minutes that are still pending
-      const expiredOrders = orders.filter((order) => {
-        const orderAge = now - new Date(order.timestamp).getTime();
-        return order.status === "pending" && orderAge > expiredThreshold;
-      });
-
-      // Clean up expired orders and free their time slots
-      expiredOrders.forEach((order) => {
-        if (order.timeSlot) {
-          delete timeSlotBookings[order.timeSlot];
-          console.log(
-            `[${chalk.yellow("CLEANUP")}]: Freed time slot ${order.timeSlot} from expired order #${order.id}`,
-          );
-          logs.push(
-            `[CLEANUP]: Freed time slot ${order.timeSlot} from expired order #${order.id}`,
-          );
-        }
-
-        // Restore stock
-        const menuItem = menu.find((m) => m.name === order.item);
-        if (menuItem) {
-          menuItem.stock += order.quantity;
-          console.log(
-            `[${chalk.yellow("CLEANUP")}]: Restored ${order.quantity} stock for ${order.item}`,
-          );
-          logs.push(
-            `[CLEANUP]: Restored ${order.quantity} stock for ${order.item}`,
-          );
-        }
-
-        // Mark as expired/cancelled
-        order.status = "expired";
-      });
-
-      if (expiredOrders.length > 0) {
-        console.log(
-          `[${chalk.yellow("CLEANUP")}]: Cleaned up ${expiredOrders.length} expired orders`,
-        );
-        logs.push(
-          `[CLEANUP]: Cleaned up ${expiredOrders.length} expired orders`,
-        );
-      }
-    },
-    5 * 60 * 1000,
-  ); // Run every 5 minutes
-}
 
 // ---------- SELF PING ---------- \\
 // This will bypass the Render free instance server shutdown

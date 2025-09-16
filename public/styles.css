@@ -1706,6 +1706,47 @@ body.login-page {
     }
 }
 
+/* Time Slot Custom Styles */
+.time-slot.unavailable {
+    border-color: rgba(128, 128, 128, 0.5);
+    background-color: rgba(128, 128, 128, 0.08);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.time-slot.unavailable .slot-status {
+    color: #b0b0b0;
+}
+
+.time-slot.unavailable .slot-time {
+    color: #b0b0b0;
+}
+
+.time-slot.your-slot {
+    border-color: #7c3aed;
+    background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+    box-shadow: 0 0 12px 2px rgba(124, 58, 237, 0.15);
+    color: white;
+    opacity: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.time-slot.your-slot .slot-status {
+    color: #c4b5fd;
+    font-weight: bold;
+}
+
+.time-slot.your-slot .slot-time {
+    color: #fff;
+}
+
+.time-slot.your-slot input[type="radio"]:checked ~ .slot-time,
+.time-slot.your-slot input[type="radio"]:checked ~ .slot-status {
+    color: #fff;
+    text-shadow: 0 0 8px #7c3aed;
+}
+
 .form-buttons {
     display: flex;
     gap: 15px;

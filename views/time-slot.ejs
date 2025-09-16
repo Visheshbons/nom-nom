@@ -44,8 +44,25 @@
                     <div class="time-slots-grid">
                         <% for (let i = 0; i < timeSlots.length; i++) { %>
                             <% const slot = timeSlots[i]; %>
-                            <% const isAvailable = availableSlots.includes(slot); %>
-                            <label class="time-slot <%= isAvailable ? 'available' : 'booked' %>">
+                            <% if (userBookedSlot) { %>
+                                <% const isUserSlot = slot === userBookedSlot; %>
+                                <label class="time-slot <%= isUserSlot ? 'your-slot' : 'unavailable' %>">
+                                    <input
+                                        type="radio"
+                                        name="timeSlot"
+                                        value="<%= slot %>"
+                                        <%= !isUserSlot ? 'disabled' : '' %>
+                                        <%= isUserSlot ? 'checked' : '' %>
+                                        required
+                                    >
+                                    <span class="slot-time"><%= slot %> PM</span>
+                                    <span class="slot-status">
+                                        <%= isUserSlot ? 'Your Timeslot' : 'Unavailable' %>
+                                    </span>
+                                </label>
+                            <% } else { %>
+                                <% const isAvailable = availableSlots.includes(slot); %>
+                                <label class="time-slot <%= isAvailable ? 'available' : 'booked' %>">
                                 <input
                                     type="radio"
                                     name="timeSlot"
@@ -57,7 +74,8 @@
                                 <span class="slot-status">
                                     <%= isAvailable ? 'Available' : 'Booked' %>
                                 </span>
-                            </label>
+                                </label>
+                            <% } %>
                         <% } %>
                     </div>
 
@@ -73,20 +91,27 @@
             const timeSlotInputs = document.querySelectorAll('input[name="timeSlot"]');
             const confirmBtn = document.getElementById('confirmBtn');
 
-            timeSlotInputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    confirmBtn.disabled = false;
-                });
-            });
-
-            // Add animation on load
+            // Enable confirm button if a timeslot is already checked on page load
             document.addEventListener('DOMContentLoaded', function() {
+                const checkedInput = Array.from(timeSlotInputs).find(input => input.checked);
+                if (checkedInput) {
+                    confirmBtn.disabled = false;
+                }
+
+                // Add animation on load
                 const slots = document.querySelectorAll('.time-slot');
                 slots.forEach((slot, index) => {
                     setTimeout(() => {
                         slot.style.opacity = '1';
                         slot.style.transform = 'translateY(0)';
                     }, index * 50);
+                });
+            });
+
+            // Enable confirm button when a timeslot is selected
+            timeSlotInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    confirmBtn.disabled = false;
                 });
             });
         </script>
