@@ -6,7 +6,7 @@ import { body, validationResult } from "express-validator";
 import chalk from "chalk";
 import fs from "fs";
 
-const app = express(); 
+const app = express();
 const PORT = 3000 || process.env.PORT;
 
 // ---------- EXPRESS APP INITIALISATION ---------- \\
