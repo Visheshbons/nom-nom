@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Nom Nom - Select Pickup Time">
+    <meta name="keywords" content="cookies, brownies, lemonade, treats">
+    <meta name="author" content="Nom Nom Team">
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="shortcut icon" href="logo-photoroom.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
+    <title>Select Pickup Time | Nom Nom</title>
+</head>
+<body>
+    <%- include('header') %>
+    <main class="top">
+        <section>
+            <h1>Select Pickup Time</h1>
+            <p>Please choose when you'd like to pick up your order.</p>
+        </section>
+
+        <hr>
+
+        <section class="time-slot-section">
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <div class="summary-details">
+                    <p><strong>Item:</strong> <%= orderDetails.item %></p>
+                    <p><strong>Quantity:</strong> <%= orderDetails.quantity %></p>
+                    <p><strong>Customer:</strong> <%= orderDetails.customerName %></p>
+                    <p><strong>Email:</strong> <%= orderDetails.customerEmail %></p>
+                    <p><strong>Total:</strong> $<%= orderDetails.total.toFixed(2) %></p>
+                </div>
+            </div>
+
+            <div class="time-slots-container">
+                <h2>Available Pickup Times</h2>
+                <p class="time-info">Market Day pickup times: 12:30 PM - 1:15 PM</p>
+
+                <form action="/confirm-order" method="POST" id="timeSlotForm">
+                    <div class="time-slots-grid">
+                        <% for (let i = 0; i < timeSlots.length; i++) { %>
+                            <% const slot = timeSlots[i]; %>
+                            <% const isAvailable = availableSlots.includes(slot); %>
+                            <label class="time-slot <%= isAvailable ? 'available' : 'booked' %>">
+                                <input
+                                    type="radio"
+                                    name="timeSlot"
+                                    value="<%= slot %>"
+                                    <%= !isAvailable ? 'disabled' : '' %>
+                                    required
+                                >
+                                <span class="slot-time"><%= slot %> PM</span>
+                                <span class="slot-status">
+                                    <%= isAvailable ? 'Available' : 'Booked' %>
+                                </span>
+                            </label>
+                        <% } %>
+                    </div>
+
+                    <div class="form-buttons">
+                        <button type="submit" id="confirmBtn" disabled>Confirm Order</button>
+                        <a href="/menu" class="cancel-btn">Back to Menu</a>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <script>
+            const timeSlotInputs = document.querySelectorAll('input[name="timeSlot"]');
+            const confirmBtn = document.getElementById('confirmBtn');
+
+            timeSlotInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    confirmBtn.disabled = false;
+                });
+            });
+
+            // Add animation on load
+            document.addEventListener('DOMContentLoaded', function() {
+                const slots = document.querySelectorAll('.time-slot');
+                slots.forEach((slot, index) => {
+                    setTimeout(() => {
+                        slot.style.opacity = '1';
+                        slot.style.transform = 'translateY(0)';
+                    }, index * 50);
+                });
+            });
+        </script>
+    </main>
+</body>
+</html>

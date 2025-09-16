@@ -63,6 +63,7 @@
                                 <th>Item</th>
                                 <th>Quantity</th>
                                 <th>Total</th>
+                                <th>Pickup Time</th>
                                 <th>Status</th>
                                 <th>Date</th>
                                 <th>Actions</th>
@@ -77,6 +78,13 @@
                                     <td><%= orders[i].item %></td>
                                     <td><%= orders[i].quantity %></td>
                                     <td>$<%= orders[i].total.toFixed(2) %></td>
+                                    <td>
+                                        <% if (orders[i].timeSlot) { %>
+                                            <span style="color: #ef2868; font-weight: bold; background: rgba(239, 40, 104, 0.1); padding: 4px 8px; border-radius: 4px;"><%= orders[i].timeSlot %> PM</span>
+                                        <% } else { %>
+                                            <span style="color: #ccc; font-style: italic;">No time selected</span>
+                                        <% } %>
+                                    </td>
                                     <td>
                                         <span class="status-badge status-<%= orders[i].status %>">
                                             <%= orders[i].status.charAt(0).toUpperCase() + orders[i].status.slice(1) %>
@@ -135,6 +143,16 @@
                                 <div class="order-field">
                                     <span class="order-field-label">Total</span>
                                     <span class="order-field-value">$<%= orders[i].total.toFixed(2) %></span>
+                                </div>
+                                <div class="order-field">
+                                    <span class="order-field-label">Pickup Time</span>
+                                    <span class="order-field-value" style="<%= orders[i].timeSlot ? 'color: #ef2868; font-weight: bold;' : 'color: #ccc; font-style: italic;' %>">
+                                        <% if (orders[i].timeSlot) { %>
+                                            🕐 <%= orders[i].timeSlot %> PM
+                                        <% } else { %>
+                                            No time selected
+                                        <% } %>
+                                    </span>
                                 </div>
                                 <div class="order-field">
                                     <span class="order-field-label">Date</span>
@@ -255,6 +273,7 @@
                                 <p><strong>Quantity:</strong> ${order.quantity}</p>
                                 <p><strong>Unit Price:</strong> $${order.price.toFixed(2)}</p>
                                 <p><strong>Total:</strong> $${order.total.toFixed(2)}</p>
+                                <p><strong>Pickup Time:</strong> <span style="${order.timeSlot ? 'color: #ef2868; font-weight: bold;' : 'color: #ccc; font-style: italic;'}">${order.timeSlot ? '🕐 ' + order.timeSlot + ' PM' : 'No time selected'}</span></p>
                                 <p><strong>Status:</strong> <span class="status-badge status-${order.status}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></p>
                                 <p><strong>Order Date:</strong> ${new Date(order.timestamp).toLocaleString()}</p>
                             </div>

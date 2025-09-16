@@ -250,6 +250,21 @@ hr {
     section {
         padding: 15px;
     }
+
+    /* Modal responsive styles for tablets */
+    .modal-content {
+        margin: 10% auto;
+        width: 90%;
+        padding: 18px;
+        max-height: 85vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .form-group input {
+        width: 95%;
+        box-sizing: border-box;
+    }
 }
 
 @media (max-width: 480px) {
@@ -285,6 +300,38 @@ hr {
     section {
         padding: 10px;
         margin: 20px 0;
+    }
+
+    /* Modal responsive styles */
+    .modal-content {
+        margin: 5% auto;
+        width: 95%;
+        max-width: none;
+        padding: 15px;
+        max-height: 90vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 5px;
+        position: relative;
+    }
+
+    .form-group input {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .form-buttons {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .form-buttons button {
+        width: 100%;
+        padding: 12px;
+        font-size: 1em;
+        min-height: 44px;
     }
 }
 
@@ -366,6 +413,10 @@ button.cancel:hover {
     max-width: 500px;
     border-radius: 10px;
     color: white;
+    max-height: 80vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
 }
 
 .modal-close {
@@ -416,6 +467,17 @@ button.cancel:hover {
 
 .form-buttons {
     text-align: center;
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.form-buttons button {
+    min-width: 120px;
+    flex: 1;
+    max-width: 200px;
 }
 
 /* Contact page specific styles */
@@ -428,13 +490,13 @@ button.cancel:hover {
 }
 
 .contact-form {
-    background-color: rgba(255,255,255,0.06);
+    background-color: rgba(255, 255, 255, 0.06);
     padding: 24px;
     border-radius: 12px;
-    border: 2px solid rgba(239,40,104,0.18);
+    border: 2px solid rgba(239, 40, 104, 0.18);
     width: 100%;
     max-width: 700px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
     text-align: left;
 }
 
@@ -453,22 +515,24 @@ button.cancel:hover {
 .contact-form textarea {
     width: 100%;
     padding: 12px 14px;
-    border: 2px solid rgba(255,255,255,0.08);
+    border: 2px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    background-color: rgba(255,255,255,0.04);
+    background-color: rgba(255, 255, 255, 0.04);
     color: white;
     font-family: "Comic Relief", system-ui;
     font-size: 1em;
     box-sizing: border-box;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
 }
 
 .contact-form input:focus,
 .contact-form textarea:focus {
     outline: none;
     border-color: #ef2868;
-    box-shadow: 0 6px 18px rgba(239,40,104,0.12);
-    background-color: rgba(255,255,255,0.06);
+    box-shadow: 0 6px 18px rgba(239, 40, 104, 0.12);
+    background-color: rgba(255, 255, 255, 0.06);
 }
 
 .contact-form textarea {
@@ -485,7 +549,9 @@ button.cancel:hover {
     border-radius: 10px;
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.12s ease;
+    transition:
+        background-color 0.2s ease,
+        transform 0.12s ease;
 }
 
 .contact-form button[type="submit"]:hover {
@@ -494,12 +560,12 @@ button.cancel:hover {
 }
 
 .contact-details {
-    background-color: rgba(255,255,255,0.03);
+    background-color: rgba(255, 255, 255, 0.03);
     border-radius: 10px;
     padding: 18px;
     width: 100%;
     max-width: 320px;
-    border: 2px solid rgba(239,40,104,0.12);
+    border: 2px solid rgba(239, 40, 104, 0.12);
     text-align: left;
 }
 
@@ -1488,4 +1554,265 @@ body.login-page {
 
 .top {
     padding-top: 45px;
+}
+
+/* Time Slot Selection Styles */
+.time-slot-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.order-summary {
+    background-color: rgba(255, 255, 255, 0.06);
+    padding: 20px;
+    border-radius: 12px;
+    border: 2px solid rgba(239, 40, 104, 0.18);
+    margin-bottom: 30px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.order-summary h2 {
+    color: #ef2868;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.summary-details p {
+    margin: 8px 0;
+    color: white;
+    font-size: 1.1em;
+}
+
+.summary-details strong {
+    color: yellow;
+}
+
+.time-slots-container {
+    background-color: rgba(255, 255, 255, 0.03);
+    padding: 25px;
+    border-radius: 12px;
+    border: 2px solid rgba(239, 40, 104, 0.12);
+}
+
+.time-slots-container h2 {
+    color: #ef2868;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.time-info {
+    text-align: center;
+    color: yellow;
+    margin-bottom: 25px;
+    font-weight: bold;
+}
+
+.time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.time-slot {
+    display: block;
+    position: relative;
+    padding: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.time-slot.available {
+    border-color: rgba(0, 255, 0, 0.4);
+    background-color: rgba(0, 255, 0, 0.05);
+}
+
+.time-slot.available:hover {
+    border-color: #ef2868;
+    background-color: rgba(239, 40, 104, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(239, 40, 104, 0.3);
+}
+
+.time-slot.booked {
+    border-color: rgba(255, 0, 0, 0.4);
+    background-color: rgba(255, 0, 0, 0.05);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.time-slot input[type="radio"] {
+    display: none;
+}
+
+.time-slot input[type="radio"]:checked + .slot-time {
+    color: #ef2868;
+}
+
+.time-slot input[type="radio"]:checked ~ .slot-status {
+    color: #ef2868;
+}
+
+.time-slot.available input[type="radio"]:checked ~ .slot-time,
+.time-slot.available input[type="radio"]:checked ~ .slot-status {
+    color: #ef2868;
+}
+
+.time-slot.available input[type="radio"]:checked {
+    & + .slot-time + .slot-status {
+        color: #ef2868;
+    }
+}
+
+.time-slot input[type="radio"]:checked ~ * {
+    color: #ef2868;
+}
+
+.slot-time {
+    display: block;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 5px;
+}
+
+.slot-status {
+    display: block;
+    font-size: 0.9em;
+    color: #ccc;
+}
+
+.time-slot.available .slot-status {
+    color: #90ee90;
+}
+
+.time-slot.booked .slot-status {
+    color: #ff6b6b;
+}
+
+.time-slot.available input[type="radio"]:checked {
+    & ~ .slot-time {
+        color: #ef2868;
+    }
+    & ~ .slot-status {
+        color: #ef2868;
+    }
+}
+
+.form-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.form-buttons button {
+    background-color: #ef2868;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: "Comic Relief", system-ui;
+    min-width: 150px;
+}
+
+.form-buttons button:hover:not(:disabled) {
+    background-color: #d91e54;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(239, 40, 104, 0.4);
+}
+
+.form-buttons button:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.cancel-btn {
+    background-color: transparent !important;
+    color: white !important;
+    border: 2px solid #666 !important;
+    padding: 10px 28px !important;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    font-family: "Comic Relief", system-ui;
+    min-width: 150px;
+    text-align: center;
+    display: inline-block;
+}
+
+.cancel-btn:hover {
+    border-color: #ef2868 !important;
+    color: #ef2868 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(239, 40, 104, 0.2);
+}
+
+/* Mobile Responsive Styles for Time Slots */
+@media (max-width: 768px) {
+    .time-slot-section {
+        padding: 15px;
+    }
+
+    .time-slots-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .time-slot {
+        padding: 12px;
+    }
+
+    .slot-time {
+        font-size: 1.1em;
+    }
+
+    .form-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .form-buttons button,
+    .cancel-btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .time-slots-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .time-slot {
+        padding: 10px;
+    }
+
+    .slot-time {
+        font-size: 1em;
+    }
+
+    .slot-status {
+        font-size: 0.8em;
+    }
+
+    .order-summary,
+    .time-slots-container {
+        padding: 15px;
+    }
 }

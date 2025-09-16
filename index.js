@@ -18,8 +18,25 @@ const orderLimit = 2;
 const banLimit = 5;
 const selfPing = false;
 
+// Time slot configuration (12:30 PM - 1:15 PM in 5-minute intervals)
+const TIME_SLOTS = [
+  "12:30",
+  "12:35",
+  "12:40",
+  "12:45",
+  "12:50",
+  "12:55",
+  "1:00",
+  "1:05",
+  "1:10",
+  "1:15",
+];
+
 // Store orders in memory (in production, use a database)
 let orders = [];
+
+// Store time slot bookings
+let timeSlotBookings = {};
 
 // Store logs for the "/debug" route
 let logs = [];
@@ -146,21 +163,92 @@ app.post("/pre-order", (req, res) => {
     return res.status(400).send("Order limit reached");
   }
 
-  if (menuItem.quantity < parseInt(quantity)) {
+  if (menuItem.stock < parseInt(quantity)) {
     return res.status(400).send("Not enough stock");
   }
 
-  menuItem.stock -= parseInt(quantity);
-
-  // Create order
-  const order = {
-    id: orders.length + 1,
+  // Store order details in session/cookie for time slot selection
+  const orderDetails = {
     item: item,
     quantity: parseInt(quantity),
     customerName: customerName,
     customerEmail: customerEmail,
     price: menuItem.price,
     total: menuItem.price * parseInt(quantity),
+  };
+
+  // Store order details in cookie for next step
+  res.cookie("pendingOrder", JSON.stringify(orderDetails), {
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    httpOnly: false,
+  });
+
+  // Redirect to time slot selection
+  res.redirect("/select-time");
+});
+
+// Time slot selection page
+app.get("/select-time", (req, res) => {
+  const pendingOrder = req.cookies.pendingOrder;
+
+  if (!pendingOrder) {
+    return res.redirect("/menu");
+  }
+
+  const orderDetails = JSON.parse(pendingOrder);
+
+  // Get available time slots (not booked)
+  const availableSlots = TIME_SLOTS.filter((slot) => !timeSlotBookings[slot]);
+
+  res.render("time-slot.ejs", {
+    orderDetails: orderDetails,
+    timeSlots: TIME_SLOTS,
+    availableSlots: availableSlots,
+    bookedSlots: timeSlotBookings,
+  });
+});
+
+// Confirm order with time slot
+app.post("/confirm-order", (req, res) => {
+  const { timeSlot } = req.body;
+  const pendingOrder = req.cookies.pendingOrder;
+
+  if (!pendingOrder) {
+    return res.status(400).send("No pending order found");
+  }
+
+  if (!timeSlot || !TIME_SLOTS.includes(timeSlot)) {
+    return res.status(400).send("Invalid time slot");
+  }
+
+  if (timeSlotBookings[timeSlot]) {
+    return res.status(400).send("Time slot already booked");
+  }
+
+  const orderDetails = JSON.parse(pendingOrder);
+  let userOrders = req.cookies.OrderCount || 0;
+
+  // Find the menu item and update stock
+  const menuItem = menu.find((m) => m.name === orderDetails.item);
+  if (!menuItem || menuItem.stock < orderDetails.quantity) {
+    return res.status(400).send("Item no longer available");
+  }
+
+  menuItem.stock -= orderDetails.quantity;
+
+  // Book the time slot
+  timeSlotBookings[timeSlot] = true;
+
+  // Create final order
+  const order = {
+    id: orders.length + 1,
+    item: orderDetails.item,
+    quantity: orderDetails.quantity,
+    customerName: orderDetails.customerName,
+    customerEmail: orderDetails.customerEmail,
+    price: orderDetails.price,
+    total: orderDetails.total,
+    timeSlot: timeSlot,
     timestamp: new Date(),
     status: "pending",
   };
@@ -169,15 +257,27 @@ app.post("/pre-order", (req, res) => {
   logs.push(order);
 
   orders.push(order);
-
   userOrders++;
 
-  // Redirect back to menu with success message
+  // Clear pending order and update user order count
+  res.clearCookie("pendingOrder");
   res.cookie("OrderCount", userOrders).redirect("/menu?success=true");
 });
 
 app.get("/orders", (req, res) => {
   res.json(orders);
+});
+
+// Get available time slots
+app.get("/api/time-slots", (req, res) => {
+  const availableSlots = TIME_SLOTS.filter((slot) => !timeSlotBookings[slot]);
+  res.json({
+    allSlots: TIME_SLOTS,
+    availableSlots: availableSlots,
+    bookedSlots: Object.keys(timeSlotBookings).filter(
+      (slot) => timeSlotBookings[slot],
+    ),
+  });
 });
 
 // Admin login page
@@ -276,6 +376,10 @@ app.post("/admin/orders/:id/status", requireAuth, (req, res) => {
 
   const order = orders.find((o) => o.id === orderId);
   if (order) {
+    // If order is being cancelled, free up the time slot
+    if (status === "cancelled" && order.timeSlot) {
+      delete timeSlotBookings[order.timeSlot];
+    }
     order.status = status;
   }
 
@@ -288,6 +392,11 @@ app.delete("/admin/orders/:id", requireAuth, (req, res) => {
   const orderIndex = orders.findIndex((o) => o.id === orderId);
 
   if (orderIndex !== -1) {
+    const order = orders[orderIndex];
+    // Free up time slot if order had one
+    if (order.timeSlot) {
+      delete timeSlotBookings[order.timeSlot];
+    }
     orders.splice(orderIndex, 1);
     res.json({ success: true });
   } else {
@@ -321,6 +430,20 @@ app.post("/confirm-order/:id", (req, res) => {
   res.json(order);
 });
 
+// Cancel order and free up time slot
+app.post("/admin/orders/:id/cancel", requireAuth, (req, res) => {
+  const orderId = parseInt(req.params.id);
+  const order = orders.find((o) => o.id === orderId);
+
+  if (order && order.timeSlot) {
+    // Free up the time slot
+    delete timeSlotBookings[order.timeSlot];
+    order.status = "cancelled";
+  }
+
+  res.redirect("/admin");
+});
+
 app.get("/orders/:id", (req, res) => {
   const orderId = parseInt(req.params.id);
 
@@ -341,6 +464,11 @@ app.get("/about", (req, res) => {
 // ---------- CONTACT ---------- \\
 app.get("/contact", (req, res) => {
   res.render("contact.ejs");
+});
+
+// ---------- TEST PAGE ---------- \\
+app.get("/test-timeslots", (req, res) => {
+  res.sendFile(__dirname + "/test-timeslots.html");
 });
 
 // ---------- DEBUG ---------- \\
@@ -366,6 +494,18 @@ app.get("/debug", requireAuth, (req, res) => {
       pending: orders.filter((o) => o.status === "pending").length,
       completed: orders.filter((o) => o.status === "completed").length,
       confirmed: orders.filter((o) => o.status === "confirmed").length,
+    },
+    timeSlots: {
+      allSlots: TIME_SLOTS,
+      bookedSlots: Object.keys(timeSlotBookings).filter(
+        (slot) => timeSlotBookings[slot],
+      ),
+      availableSlots: TIME_SLOTS.filter((slot) => !timeSlotBookings[slot]),
+      totalBooked: Object.keys(timeSlotBookings).filter(
+        (slot) => timeSlotBookings[slot],
+      ).length,
+      totalAvailable: TIME_SLOTS.filter((slot) => !timeSlotBookings[slot])
+        .length,
     },
     menu: menu.map((item) => ({
       name: item.name,
@@ -406,6 +546,18 @@ app.get("/debug/api", (req, res) => {
       pending: orders.filter((o) => o.status === "pending").length,
       completed: orders.filter((o) => o.status === "completed").length,
       confirmed: orders.filter((o) => o.status === "confirmed").length,
+    },
+    timeSlots: {
+      allSlots: TIME_SLOTS,
+      bookedSlots: Object.keys(timeSlotBookings).filter(
+        (slot) => timeSlotBookings[slot],
+      ),
+      availableSlots: TIME_SLOTS.filter((slot) => !timeSlotBookings[slot]),
+      totalBooked: Object.keys(timeSlotBookings).filter(
+        (slot) => timeSlotBookings[slot],
+      ).length,
+      totalAvailable: TIME_SLOTS.filter((slot) => !timeSlotBookings[slot])
+        .length,
     },
     menu: menu.map((item) => ({
       name: item.name,
@@ -457,13 +609,73 @@ app.listen(port, async () => {
         `[WARN]: Item "${menu[i].name}" has only ${menu[i].stock} in stock`,
       );
     } else {
+      const stockDisplay =
+        menu[i].stock === Math.MAX_SAFE_INTEGER ? "∞" : menu[i].stock;
       console.log(
-        `Item "${chalk.grey(menu[i].name)}" has ${chalk.green(menu[i].stock)} in stock`,
+        `Item "${chalk.grey(menu[i].name)}" has ${chalk.green(stockDisplay)} in stock`,
       );
-      logs.push(`Item "${menu[i].name}" has ${menu[i].stock} in stock`);
+      logs.push(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
     }
   }
+
+  // Start periodic cleanup of expired orders
+  startPeriodicCleanup();
 });
+
+// ---------- PERIODIC CLEANUP ---------- \\
+function startPeriodicCleanup() {
+  // Clean up every 5 minutes
+  setInterval(
+    () => {
+      const now = Date.now();
+      const expiredThreshold = 15 * 60 * 1000; // 15 minutes
+
+      // Find orders older than 15 minutes that are still pending
+      const expiredOrders = orders.filter((order) => {
+        const orderAge = now - new Date(order.timestamp).getTime();
+        return order.status === "pending" && orderAge > expiredThreshold;
+      });
+
+      // Clean up expired orders and free their time slots
+      expiredOrders.forEach((order) => {
+        if (order.timeSlot) {
+          delete timeSlotBookings[order.timeSlot];
+          console.log(
+            `[${chalk.yellow("CLEANUP")}]: Freed time slot ${order.timeSlot} from expired order #${order.id}`,
+          );
+          logs.push(
+            `[CLEANUP]: Freed time slot ${order.timeSlot} from expired order #${order.id}`,
+          );
+        }
+
+        // Restore stock
+        const menuItem = menu.find((m) => m.name === order.item);
+        if (menuItem) {
+          menuItem.stock += order.quantity;
+          console.log(
+            `[${chalk.yellow("CLEANUP")}]: Restored ${order.quantity} stock for ${order.item}`,
+          );
+          logs.push(
+            `[CLEANUP]: Restored ${order.quantity} stock for ${order.item}`,
+          );
+        }
+
+        // Mark as expired/cancelled
+        order.status = "expired";
+      });
+
+      if (expiredOrders.length > 0) {
+        console.log(
+          `[${chalk.yellow("CLEANUP")}]: Cleaned up ${expiredOrders.length} expired orders`,
+        );
+        logs.push(
+          `[CLEANUP]: Cleaned up ${expiredOrders.length} expired orders`,
+        );
+      }
+    },
+    5 * 60 * 1000,
+  ); // Run every 5 minutes
+}
 
 // ---------- SELF PING ---------- \\
 // This will bypass the Render free instance server shutdown
@@ -561,7 +773,7 @@ async function selfTest() {
   console.log(`Total tests passed: ${chalk.green(total)}`);
   if (total === 5) {
     console.log(chalk.green(`[PASS]`));
-    console.log("[PASS]");
+    logs.push("[PASS]");
   } else {
     console.log(chalk.red(`[FAIL]`));
     console.log("Inform the developer as soon as possible");
