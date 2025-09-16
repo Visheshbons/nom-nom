@@ -487,6 +487,8 @@ app.get("/debug", requireAuth, (req, res) => {
     logs.push(`[WARN]: Debug route accessed`);
   }
 
+  const logsToDisplay = [...logs].slice(-50);
+
   // Prepare debug information
   const debugInfo = {
     timestamp: new Date().toISOString(),
@@ -523,7 +525,7 @@ app.get("/debug", requireAuth, (req, res) => {
     sessions: {
       activeAdminSessions: adminSessions.size,
     },
-    logs: logs.reverse().slice(-50).reverse(), // Return last 50 log entries, newest first
+    logs: logsToDisplay,
     config: {
       orderLimit: orderLimit,
       banLimit: banLimit,
@@ -606,7 +608,8 @@ app.listen(port, async () => {
   console.log(`Server Session ID: ${chalk.grey(serverSession)}`);
   logs.push(`Server is running on port ${port}`);
   logs.push(`Server Session ID: ${serverSession}`);
-  await selfTest();
+  await Argon2SelfTest();
+  await GeneralTest();
   for (let i = 0; i < menu.length; i++) {
     if (menu[i].stock <= 10) {
       console.warn(
@@ -644,14 +647,16 @@ if (selfPing) {
   }, 600000); // 600,000 milliseconds = 10 minutes
 }
 
-async function selfTest() {
+async function Argon2SelfTest() {
   console.log();
   console.log(
-    chalk.yellowBright(`----------########### SELF TEST ###########----------`),
+    chalk.yellowBright(
+      `----------########### ARGON2 SELF TEST ###########----------`,
+    ),
   );
   console.log();
   console.log(`Running Argon2 self-test...`);
-  logs.push("----------########## SELF TEST ##########----------");
+  logs.push("----------########## ARGON2 SELF TEST ##########----------");
   logs.push("Running Argon2 self-test...");
 
   const testPassword = `testString`;
@@ -732,8 +737,203 @@ async function selfTest() {
 
   console.log();
   console.log(
-    chalk.yellowBright(`----------########### SELF TEST ###########----------`),
+    chalk.yellowBright(
+      `----------########### ARGON2 SELF TEST ###########----------`,
+    ),
   );
   console.log();
-  logs.push(`----------########## SELF TEST ##########----------`);
+  logs.push(`----------########## ARGON2 SELF TEST ##########----------`);
+}
+
+async function GeneralTest() {
+  console.log();
+  console.log(
+    chalk.yellowBright(
+      "----------########## GENERAL SELF TESTS ##########----------",
+    ),
+  );
+  console.log();
+  logs.push(`----------########## GENERAL SELF TESTS ##########----------`);
+
+  // Define all tests as objects with a description and a test function
+  const tests = [
+    {
+      description: "Menu item names are unique",
+      test: () => {
+        const menuNames = menu.map((item) => item.name);
+        return menuNames.length === new Set(menuNames).size;
+      },
+    },
+    {
+      description: "All menu items have price > 0 and stock >= 0",
+      test: () =>
+        menu.every(
+          (item) =>
+            typeof item.price === "number" &&
+            item.price > 0 &&
+            typeof item.stock === "number" &&
+            item.stock >= 0,
+        ),
+    },
+    {
+      description: "All menu items have a visible property (boolean)",
+      test: () => menu.every((item) => typeof item.visible === "boolean"),
+    },
+    {
+      description: "All time slots are unique and in correct format (HH:MM)",
+      test: () => {
+        const timeSlotFormat = /^\d{1,2}:\d{2}$/;
+        return (
+          TIME_SLOTS.length === new Set(TIME_SLOTS).size &&
+          TIME_SLOTS.every((slot) => timeSlotFormat.test(slot))
+        );
+      },
+    },
+    {
+      description: "Orders array is an array",
+      test: () => Array.isArray(orders),
+    },
+    {
+      description: "All orders (if any) have required fields",
+      test: () => {
+        const requiredOrderFields = [
+          "id",
+          "item",
+          "quantity",
+          "customerName",
+          "customerEmail",
+          "price",
+          "total",
+          "timeSlot",
+          "timestamp",
+          "status",
+        ];
+        return (
+          orders.every((order) =>
+            requiredOrderFields.every((field) => field in order),
+          ) || orders.length === 0
+        );
+      },
+    },
+    {
+      description:
+        "Time slot bookings object only contains valid time slots as keys",
+      test: () =>
+        Object.keys(timeSlotBookings).every((slot) =>
+          TIME_SLOTS.includes(slot),
+        ),
+    },
+    {
+      description: "Admin sessions is a Set",
+      test: () => adminSessions instanceof Set,
+    },
+    {
+      description: "Server session is a non-empty string",
+      test: () => typeof serverSession === "string" && serverSession.length > 0,
+    },
+    {
+      description: "Order limit and ban limit are positive integers",
+      test: () =>
+        Number.isInteger(orderLimit) &&
+        orderLimit > 0 &&
+        Number.isInteger(banLimit) &&
+        banLimit > 0,
+    },
+    {
+      description: "All menu items visible to users have stock > 0",
+      test: () =>
+        menu.filter((item) => item.visible).every((item) => item.stock > 0),
+    },
+    {
+      description: "Logs is an array",
+      test: () => Array.isArray(logs),
+    },
+    {
+      description: "All menu items have a name property (string)",
+      test: () => menu.every((item) => typeof item.name === "string"),
+    },
+    {
+      description: "All menu items have a price property (number)",
+      test: () => menu.every((item) => typeof item.price === "number"),
+    },
+    {
+      description: "All menu items have a stock property (number)",
+      test: () => menu.every((item) => typeof item.stock === "number"),
+    },
+    {
+      description: "All menu items have a visible property (boolean)",
+      test: () => menu.every((item) => typeof item.visible === "boolean"),
+    },
+    {
+      description:
+        "All menu items with custom property have valid custom structure",
+      test: () =>
+        menu
+          .filter((item) => item.custom)
+          .every(
+            (item) =>
+              typeof item.custom === "object" &&
+              Object.keys(item.custom).length > 0 &&
+              typeof item.custom.sauces === "object",
+          ) || menu.filter((item) => item.custom).length === 0,
+    },
+    {
+      description: "All booked time slots are marked true in timeSlotBookings",
+      test: () =>
+        Object.values(timeSlotBookings).every((val) => val === true) ||
+        Object.keys(timeSlotBookings).length === 0,
+    },
+    {
+      description: "All orders have a valid status",
+      test: () => {
+        const validStatuses = [
+          "pending",
+          "completed",
+          "confirmed",
+          "cancelled",
+        ];
+        return (
+          orders.every((order) => validStatuses.includes(order.status)) ||
+          orders.length === 0
+        );
+      },
+    },
+    {
+      description: "All orders have a valid timeSlot (if present)",
+      test: () =>
+        orders.every(
+          (order) => !order.timeSlot || TIME_SLOTS.includes(order.timeSlot),
+        ) || orders.length === 0,
+    },
+  ];
+
+  const totalTests = tests.length;
+  let passed = 0;
+
+  for (let i = 0; i < totalTests; i++) {
+    const result = !!tests[i].test();
+    if (result) passed++;
+    const status = result ? chalk.green("PASS") : chalk.red("FAIL");
+    console.log(`General Test (${i + 1}/${totalTests}): [${status}]`);
+    logs.push(
+      `General Test (${i + 1}/${totalTests}): [${result ? "[PASS]" : "[FAIL]"}]`,
+    );
+  }
+
+  // Summary
+  console.log();
+  const summaryStatus =
+    passed === totalTests ? chalk.green("PASS") : chalk.red("FAIL");
+  console.log(`General Test ${passed}/${totalTests}: [${summaryStatus}]`);
+  logs.push(
+    `General Test (${passed}/${totalTests}): ${passed === totalTests ? "[PASS]" : "[FAIL]"}`,
+  );
+  console.log();
+  console.log(
+    chalk.yellowBright(
+      "----------########## GENERAL SELF TESTS ##########----------",
+    ),
+  );
+  console.log();
+  logs.push(`----------########## GENERAL SELF TESTS ##########----------`);
 }
