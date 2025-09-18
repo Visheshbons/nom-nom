@@ -19,7 +19,7 @@ app.set("view engine", "ejs");
 // ---------- CONSTANTS & CONFIGURATION ---------- \\
 const orderLimit = 2;
 const banLimit = 5;
-const selfPing = false;
+const selfPing = true;
 
 // Time slot configuration (12:30 PM - 1:15 PM in 5-minute intervals)
 const TIME_SLOTS = [
