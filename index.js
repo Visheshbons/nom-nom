@@ -53,7 +53,7 @@ function addLog(entry) {
     if (entry instanceof Error) {
       entry = {
         name: entry.name,
-        message: entry.message,
+       message: entry.message,
         stack: entry.stack,
       };
     }
@@ -377,27 +377,44 @@ app.post(
     //   res.render("admin-login.ejs", { error: "Invalid credentials" });
     // }
 
-    if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
-      console.log(`Authentication: [${chalk.green(`PASS`)}]`);
-      addLog("Authentication: [PASS]");
-      const sessionId = Date.now().toString() + Math.random().toString(36);
-      adminSessions.add(sessionId);
-      res.cookie("adminSession", sessionId, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      }); // 24 hours
-      res.cookie("serverSession", serverSession, {
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-      }); // 24 hours
-      console.log(`Login: [${chalk.green(`PASS`)}]`);
-      addLog("Login: [PASS]");
-      res.redirect("/admin");
-      // Log in the admin (set session/JWT/etc.)
-    } else {
-      console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
-      addLog("Authentication: [FAIL]");
-      res.status(401).json({ success: false, error: "Invalid credentials" });
+    switch (username.toLowerCase()) {
+      case "admin": {
+        if (await verifyPassword(ADMIN_HASH_PASSWORD, password)) {
+          console.log(`Authentication: [${chalk.green(`PASS`)}]`);
+          addLog("Authentication: [PASS]");
+          const sessionId = Date.now().toString() + Math.random().toString(36);
+          adminSessions.add(sessionId);
+          res.cookie("adminSession", sessionId, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000,
+          }); // 24 hours
+          res.cookie("serverSession", serverSession, {
+            httpOnly: true,
+            maxAge: 24 * 60 * 60 * 1000,
+          }); // 24 hours
+          console.log(`Login: [${chalk.green(`PASS`)}]`);
+          addLog("Login: [PASS]");
+          res.redirect("/admin");
+          // Log in the admin (set session/JWT/etc.)
+        } else {
+          console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
+          addLog("Authentication: [FAIL]");
+
+          res.status(401).redirect("https://i.imgflip.com/76c924.jpg");
+        }
+      };
+      case ("John Cena").toLowerCase(): {
+        console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
+        addLog("Authentication: [FAIL]");
+
+        res.status(401).redirect("https://www.pcpitstop.com.au/wp-content/uploads/2022/05/Password-Incorrect-Anchorman-meme.webp");
+      };
+      case ("Incorrect").toLowerCase(): {
+        console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
+        addLog("Authentication: [FAIL]");
+
+        res.status(401).redirect("https://i.imgflip.com/76c924.jpg");
+      }
     }
 
     console.log();
@@ -662,7 +679,7 @@ app.get("/debug/api", (req, res) => {
 
   res.json({
     success: true,
-    message: "Debug information retrieved successfully",
+   message: "Debug information retrieved successfully",
     data: debugInfo,
   });
 });
@@ -675,7 +692,13 @@ app.get("/debug/logs", requireAuth, (req, res) => {
 
 // ---------- OTHERS ---------- \\
 app.use((req, res, next) => {
-  res.send("ERR_404_NOT_FOUND");
+  res.status(404).render('err.ejs', {
+    err: {
+      code: 404,
+      literal: "ERR_404_NOT_FOUND",
+      message: "The requested resource was not found!",
+    }
+  });
 });
 
 function errorHandler(err, req, res, next) {
@@ -686,7 +709,72 @@ function errorHandler(err, req, res, next) {
   } catch (e) {
     // swallow logging errors — we don't want to throw from the error handler
   }
-  res.status(500).send("Something broke!");
+
+
+  let literal = "";
+  let message = "";
+  switch (err.status){
+    case 500: {
+      literal = "ERR_500_INTERNAL_SERVER_ERROR";
+      message = "A unknown error has occured!";
+    }
+    case 501: {
+      literal = "ERR_501_NOT_IMPLEMENTED";
+      message = "This feature is not available yet!";
+    }
+    case 502: {
+      literal = "ERR_502_BAD_GATEWAY";
+      message = "The server was acting as a gateway or proxy and received an invalid response from the upstream server!";
+    }
+    case 503: {
+      literal = "ERR_503_SERVICE_UNAVAILABLE";
+      message = "The server is currently unavailable (overloaded or down)!";
+    }
+    case 504: {
+      literal = "ERR_504_GATEWAY_TIMEOUT";
+      message = "The server was acting as a gateway or proxy and did not receive a timely response from the upstream server!";
+    }
+    case 505: {
+      literal = "ERR_505_HTTP_VERSION_NOT_SUPPORTED";
+      message = "The server does not support the HTTP protocol version used in the request!";
+    }
+    case 506: {
+      literal = "ERR_506_VARIANT_ALSO_NEGOTIATES";
+      message = "The server has an internal configuration error: the chosen variant resource is configured to engage in transparent content negotiation itself, and is therefore not a proper end point in the negotiation process!";
+    }
+    case 507: {
+      literal = "ERR_507_INSUFFICIENT_STORAGE";
+      message = "The server is unable to store the representation needed to compe the request!";
+    }
+    case 508: {
+      literal = "ERR_508_LOOP_DETECTED";
+      message = "The server detected an infinite loop while processing the request!";
+    }
+    case 509: {
+      literal = "ERR_509_BANDWIDTH_LIMIT_EXCEEDED";
+      message = "The server has exceeded the bandwidth specified by the server administrator!";
+    }
+    case 510: {
+      literal = "ERR_510_NOT_EXTENDED";
+      message = "Further extensions to the request are required for the server to fulfill it!";
+    }
+    case 511: {
+      literal = "ERR_511_NETWORK_AUTHENTICATION_REQUIRED"; 
+      message = "The client needs to authenticate to gain network access!";  
+    }
+    default: {
+      literal = "ERR_500_INTERNAL_SERVER_ERROR_UNKNOWN";
+      message = "A critical error has occured!";
+    }
+  }
+
+  res.status(err.status).render('err.ejs', {
+    err: {
+      code: err.status || 500,
+      literal:literal,
+      message:message,
+    }
+  })
 }
 app.use(errorHandler);
 
