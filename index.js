@@ -737,14 +737,18 @@ if (selfPing) {
   console.log("SELF PING ACTIVE");
   console.time("Ping Interval");
   setInterval(() => {
-    fetch("https://diminished-rights.onrender.com")
+    fetch("https://nomnomfood.onrender.com")
       .then(() => {
+        console.log();
         console.log("SELF PING");
         console.timeEnd("Ping Interval");
         console.time("Ping Interval");
+        console.log();
       })
       .catch((err) => {
+        console.log();
         console.error("Ping failed:", err);
+        console.log();
       });
   }, 600000); // 600,000 milliseconds = 10 minutes
 }
