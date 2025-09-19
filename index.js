@@ -1213,3 +1213,56 @@ async function GeneralTest() {
   console.log();
   addLog(`----------########## GENERAL SELF TESTS ##########----------`);
 }
+
+// ---------- GRACEFUL SHUTDOWN ---------- \\
+// AddLog not needed, this is server shutdown
+process.on(
+  "SIGINT" || "SIGTERM",
+  () => {
+    console.log();
+    console.log(chalk.yellow("SIGINT received. Shutting down gracefully..."));
+    console.log(chalk.yellowBright("----------########## SHUTDOWN ##########----------"));
+
+    // Delete logs.json
+    console.log();
+    try {
+      if (fs.existsSync(LOG_FILE)) {
+        fs.unlinkSync(LOG_FILE);
+        console.log(chalk.green("Logs file deleted."));
+      }
+    } catch (err) {
+      console.error(chalk.red("Error deleting logs file:"), err);
+    }
+
+    // Clear server memory
+    console.log();
+    try {
+      const pastBytes = process.memoryUsage().heapUsed;
+
+      // clear stuff
+      orders = [];
+      timeSlotBookings = {};
+      adminSessions.clear();
+      console.log(chalk.green("Server memory cleared."));
+
+      const currentBytes = process.memoryUsage().heapUsed;
+
+      // conversions
+      const pastMB = pastBytes / 1024 / 1024;
+      const currentMB = currentBytes / 1024 / 1024;
+      const freedKB = (pastBytes - currentBytes) / 1024;
+
+      console.log(
+        chalk.green(`Current memory usage: ${chalk.grey(currentMB.toFixed(2))} MB (${chalk.grey((currentBytes / 1024).toFixed(2))} kB)`)
+      );
+      console.log(
+        chalk.green(`Freed memory: ${chalk.grey(-freedKB.toFixed(2))} kB`)
+      );
+    } catch (err) {
+      console.error(chalk.red("Error clearing memory:"), err);
+    }
+
+    // Shutdown
+    process.exit(0);
+  },
+);
