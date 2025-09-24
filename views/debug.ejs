@@ -213,6 +213,53 @@
             color: #ffaa00;
         }
 
+        /* Timeslot grid styling */
+        .timeslot-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .timeslot-item {
+            padding: 8px 12px;
+            border: 2px solid;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9em;
+            cursor: default;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .timeslot-available {
+            border-color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+
+        .timeslot-booked {
+            border-color: #ff4444;
+            background: rgba(255, 68, 68, 0.1);
+            color: #ff4444;
+            box-shadow: 0 0 5px rgba(255, 68, 68, 0.3);
+        }
+
+        .timeslot-booked::after {
+            content: "BOOKED";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff4444;
+            color: #000;
+            font-size: 0.6em;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
         .refresh-btn {
             position: fixed;
             top: 20px;
@@ -366,6 +413,124 @@
                     </div>
                 </div>
                 <% }) %>
+            </div>
+
+            <!-- Time Slots Status -->
+            <div class="debug-section" style="grid-column: span 2;">
+                <h2>► TIME SLOTS AVAILABILITY</h2>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                    <div class="debug-item" style="margin: 0;">
+                        <span class="debug-label">TOTAL: </span>
+                        <span class="debug-value"><%= data.timeSlots.allSlots.length %></span>
+                    </div>
+                    <div class="debug-item" style="margin: 0;">
+                        <span class="debug-label">AVAILABLE: </span>
+                        <span class="debug-value status-ok"><%= data.timeSlots.totalAvailable %></span>
+                    </div>
+                    <div class="debug-item" style="margin: 0;">
+                        <span class="debug-label">BOOKED: </span>
+                        <span class="debug-value <%= data.timeSlots.totalBooked > 0 ? 'status-warning' : 'status-ok' %>"><%= data.timeSlots.totalBooked %></span>
+                    </div>
+                </div>
+
+                <div class="debug-label" style="margin-bottom: 10px;">TIME SLOT SELECTION:</div>
+                <div class="timeslot-grid">
+                    <% data.timeSlots.allSlots.forEach(slot => { %>
+                        <div class="timeslot-item <%= data.timeSlots.bookedSlots.includes(slot) ? 'timeslot-booked' : 'timeslot-available' %>">
+                            <%= slot %>
+                        </div>
+                    <% }) %>
+                </div>
+
+                <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.8em;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div class="timeslot-item timeslot-available" style="padding: 4px 8px; font-size: 0.7em;">12:30</div>
+                        <span class="debug-value">Available</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <div class="timeslot-item timeslot-booked" style="padding: 4px 8px; font-size: 0.7em;">12:30</div>
+                        <span class="debug-value">Booked</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders List -->
+            <div class="debug-section" style="grid-column: span 2;">
+                <h2>► RECENT ORDERS</h2>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 0.9em;">
+                    <div>
+                        <span class="debug-label">TOTAL:</span>
+                        <span class="debug-value"><%= data.orders.total %></span>
+                    </div>
+                    <div>
+                        <span class="debug-label">PENDING:</span>
+                        <span class="debug-value <%= data.orders.pending > 0 ? 'status-warning' : 'status-ok' %>"><%= data.orders.pending %></span>
+                    </div>
+                    <div>
+                        <span class="debug-label">COMPLETED:</span>
+                        <span class="debug-value status-ok"><%= data.orders.completed %></span>
+                    </div>
+                    <div>
+                        <span class="debug-label">CONFIRMED:</span>
+                        <span class="debug-value status-ok"><%= data.orders.confirmed %></span>
+                    </div>
+                </div>
+
+                <div style="max-height: 400px; overflow-y: auto;">
+                    <% if (data.orders.list && data.orders.list.length > 0) { %>
+                        <% data.orders.list.forEach((order, index) => { %>
+                            <div class="debug-item" style="border: 1px solid #003300; margin-bottom: 10px; padding: 12px; border-radius: 5px; background: rgba(0,0,0,0.3); align-items: flex-start;">
+                                <div style="width: 100%;">
+                                    <!-- Order Header -->
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <div>
+                                            <span class="debug-label">ORDER #<%= order.id %></span>
+                                            <span class="stock-indicator <%= order.status === 'pending' ? 'stock-low' : 'stock-ok' %>" style="margin-left: 10px;">
+                                                <%= order.status.toUpperCase() %>
+                                            </span>
+                                        </div>
+                                        <div class="debug-value" style="font-size: 0.8em;">
+                                            <%= new Date(order.timestamp).toLocaleString() %>
+                                        </div>
+                                    </div>
+
+                                    <!-- Order Details Grid -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em;">
+                                        <div>
+                                            <span class="debug-label">CUSTOMER:</span>
+                                            <span class="debug-value"><%= order.customerName %></span>
+                                        </div>
+                                        <div>
+                                            <span class="debug-label">EMAIL:</span>
+                                            <span class="debug-value" style="font-size: 0.8em;"><%= order.customerEmail %></span>
+                                        </div>
+                                        <div>
+                                            <span class="debug-label">ITEM:</span>
+                                            <span class="debug-value"><%= order.item %></span>
+                                        </div>
+                                        <div>
+                                            <span class="debug-label">QUANTITY:</span>
+                                            <span class="debug-value"><%= order.quantity %>x</span>
+                                        </div>
+                                        <div>
+                                            <span class="debug-label">TIME SLOT:</span>
+                                            <span class="debug-value status-warning"><%= order.timeSlot %></span>
+                                        </div>
+                                        <div>
+                                            <span class="debug-label">TOTAL:</span>
+                                            <span class="debug-value status-ok">$<%= order.total.toFixed(2) %></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="debug-item" style="text-align: center; padding: 20px;">
+                            <span class="debug-label">NO ORDERS FOUND</span>
+                            <div class="debug-value status-ok" style="margin-top: 5px;">SYSTEM READY FOR NEW ORDERS</div>
+                        </div>
+                    <% } %>
+                </div>
             </div>
 
             <!-- System Logs -->

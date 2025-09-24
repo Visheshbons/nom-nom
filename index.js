@@ -53,7 +53,7 @@ function addLog(entry) {
     if (entry instanceof Error) {
       entry = {
         name: entry.name,
-       message: entry.message,
+        message: entry.message,
         stack: entry.stack,
       };
     }
@@ -402,18 +402,25 @@ app.post(
 
           res.status(401).redirect("https://i.imgflip.com/76c924.jpg");
         }
-      };
-      case ("John Cena").toLowerCase(): {
+        break;
+      }
+      case "John Cena".toLowerCase(): {
         console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
         addLog("Authentication: [FAIL]");
 
-        res.status(401).redirect("https://www.pcpitstop.com.au/wp-content/uploads/2022/05/Password-Incorrect-Anchorman-meme.webp");
-      };
-      case ("Incorrect").toLowerCase(): {
+        res
+          .status(401)
+          .redirect(
+            "https://www.pcpitstop.com.au/wp-content/uploads/2022/05/Password-Incorrect-Anchorman-meme.webp",
+          );
+        break;
+      }
+      case "Incorrect".toLowerCase(): {
         console.log(`Authentication: [${chalk.red(`FAIL`)}]`);
         addLog("Authentication: [FAIL]");
 
         res.status(401).redirect("https://i.imgflip.com/76c924.jpg");
+        break;
       }
     }
 
@@ -483,10 +490,19 @@ app.delete("/admin/orders/:id", requireAuth, (req, res) => {
 
   if (orderIndex !== -1) {
     const order = orders[orderIndex];
+
     // Free up time slot if order had one
     if (order.timeSlot) {
       delete timeSlotBookings[order.timeSlot];
     }
+
+    // Add back stock to menu item
+    const menuItem = menu.find((m) => m.name === order.item);
+    if (menuItem) {
+      menuItem.stock += order.quantity;
+    }
+
+    // Remove order from list
     orders.splice(orderIndex, 1);
     res.json({ success: true });
   } else {
@@ -595,6 +611,7 @@ app.get("/debug", requireAuth, (req, res) => {
       pending: orders.filter((o) => o.status === "pending").length,
       completed: orders.filter((o) => o.status === "completed").length,
       confirmed: orders.filter((o) => o.status === "confirmed").length,
+      list: orders.slice(-10).reverse(), // Last 10 orders, newest first
     },
     timeSlots: {
       allSlots: TIME_SLOTS,
@@ -647,6 +664,7 @@ app.get("/debug/api", (req, res) => {
       pending: orders.filter((o) => o.status === "pending").length,
       completed: orders.filter((o) => o.status === "completed").length,
       confirmed: orders.filter((o) => o.status === "confirmed").length,
+      list: orders.slice(-10).reverse(), // Last 10 orders, newest first
     },
     timeSlots: {
       allSlots: TIME_SLOTS,
@@ -679,7 +697,7 @@ app.get("/debug/api", (req, res) => {
 
   res.json({
     success: true,
-   message: "Debug information retrieved successfully",
+    message: "Debug information retrieved successfully",
     data: debugInfo,
   });
 });
@@ -692,12 +710,12 @@ app.get("/debug/logs", requireAuth, (req, res) => {
 
 // ---------- OTHERS ---------- \\
 app.use((req, res, next) => {
-  res.status(404).render('err.ejs', {
+  res.status(404).render("err.ejs", {
     err: {
       code: 404,
       literal: "ERR_404_NOT_FOUND",
       message: "The requested resource was not found!",
-    }
+    },
   });
 });
 
@@ -710,71 +728,91 @@ function errorHandler(err, req, res, next) {
     // swallow logging errors — we don't want to throw from the error handler
   }
 
-
   let literal = "";
   let message = "";
-  switch (err.status){
+  switch (err.status) {
     case 500: {
       literal = "ERR_500_INTERNAL_SERVER_ERROR";
       message = "A unknown error has occured!";
+      break;
     }
     case 501: {
       literal = "ERR_501_NOT_IMPLEMENTED";
       message = "This feature is not available yet!";
+      break;
     }
     case 502: {
       literal = "ERR_502_BAD_GATEWAY";
-      message = "The server was acting as a gateway or proxy and received an invalid response from the upstream server!";
+      message =
+        "The server was acting as a gateway or proxy and received an invalid response from the upstream server!";
+      break;
     }
     case 503: {
       literal = "ERR_503_SERVICE_UNAVAILABLE";
       message = "The server is currently unavailable (overloaded or down)!";
+      break;
     }
     case 504: {
       literal = "ERR_504_GATEWAY_TIMEOUT";
-      message = "The server was acting as a gateway or proxy and did not receive a timely response from the upstream server!";
+      message =
+        "The server was acting as a gateway or proxy and did not receive a timely response from the upstream server!";
+      break;
     }
     case 505: {
       literal = "ERR_505_HTTP_VERSION_NOT_SUPPORTED";
-      message = "The server does not support the HTTP protocol version used in the request!";
+      message =
+        "The server does not support the HTTP protocol version used in the request!";
+      break;
     }
     case 506: {
       literal = "ERR_506_VARIANT_ALSO_NEGOTIATES";
-      message = "The server has an internal configuration error: the chosen variant resource is configured to engage in transparent content negotiation itself, and is therefore not a proper end point in the negotiation process!";
+      message =
+        "The server has an internal configuration error: the chosen variant resource is configured to engage in transparent content negotiation itself, and is therefore not a proper end point in the negotiation process!";
+      break;
     }
     case 507: {
       literal = "ERR_507_INSUFFICIENT_STORAGE";
-      message = "The server is unable to store the representation needed to compe the request!";
+      message =
+        "The server is unable to store the representation needed to compe the request!";
+      break;
     }
     case 508: {
       literal = "ERR_508_LOOP_DETECTED";
-      message = "The server detected an infinite loop while processing the request!";
+      message =
+        "The server detected an infinite loop while processing the request!";
+      break;
     }
     case 509: {
       literal = "ERR_509_BANDWIDTH_LIMIT_EXCEEDED";
-      message = "The server has exceeded the bandwidth specified by the server administrator!";
+      message =
+        "The server has exceeded the bandwidth specified by the server administrator!";
+      break;
     }
     case 510: {
       literal = "ERR_510_NOT_EXTENDED";
-      message = "Further extensions to the request are required for the server to fulfill it!";
+      message =
+        "Further extensions to the request are required for the server to fulfill it!";
+      break;
     }
     case 511: {
-      literal = "ERR_511_NETWORK_AUTHENTICATION_REQUIRED"; 
-      message = "The client needs to authenticate to gain network access!";  
+      literal = "ERR_511_NETWORK_AUTHENTICATION_REQUIRED";
+      message = "The client needs to authenticate to gain network access!";
+      break;
     }
     default: {
       literal = "ERR_500_INTERNAL_SERVER_ERROR_UNKNOWN";
       message = "A critical error has occured!";
+      break;
     }
   }
 
-  res.status(err.status).render('err.ejs', {
+  res.status(err.status || 500).render("err.ejs", {
     err: {
       code: err.status || 500,
-      literal:literal,
-      message:message,
-    }
-  })
+      literal: literal,
+      message: message,
+    },
+  });
 }
 app.use(errorHandler);
 
@@ -1308,53 +1346,54 @@ async function GeneralTest() {
 
 // ---------- GRACEFUL SHUTDOWN ---------- \\
 // AddLog not needed, this is server shutdown
-process.on(
-  "SIGINT" || "SIGTERM",
-  () => {
-    console.log();
-    console.log(chalk.yellow("SIGINT received. Shutting down gracefully..."));
-    console.log(chalk.yellowBright("----------########## SHUTDOWN ##########----------"));
+process.on("SIGINT" || "SIGTERM", () => {
+  console.log();
+  console.log(chalk.yellow("SIGINT received. Shutting down gracefully..."));
+  console.log(
+    chalk.yellowBright("----------########## SHUTDOWN ##########----------"),
+  );
 
-    // Delete logs.json
-    console.log();
-    try {
-      if (fs.existsSync(LOG_FILE)) {
-        fs.unlinkSync(LOG_FILE);
-        console.log(chalk.green("Logs file deleted."));
-      }
-    } catch (err) {
-      console.error(chalk.red("Error deleting logs file:"), err);
+  // Delete logs.json
+  console.log();
+  try {
+    if (fs.existsSync(LOG_FILE)) {
+      fs.unlinkSync(LOG_FILE);
+      console.log(chalk.green("Logs file deleted."));
     }
+  } catch (err) {
+    console.error(chalk.red("Error deleting logs file:"), err);
+  }
 
-    // Clear server memory
-    console.log();
-    try {
-      const pastBytes = process.memoryUsage().heapUsed;
+  // Clear server memory
+  console.log();
+  try {
+    const pastBytes = process.memoryUsage().heapUsed;
 
-      // clear stuff
-      orders = [];
-      timeSlotBookings = {};
-      adminSessions.clear();
-      console.log(chalk.green("Server memory cleared."));
+    // clear stuff
+    orders = [];
+    timeSlotBookings = {};
+    adminSessions.clear();
+    console.log(chalk.green("Server memory cleared."));
 
-      const currentBytes = process.memoryUsage().heapUsed;
+    const currentBytes = process.memoryUsage().heapUsed;
 
-      // conversions
-      const pastMB = pastBytes / 1024 / 1024;
-      const currentMB = currentBytes / 1024 / 1024;
-      const freedKB = (pastBytes - currentBytes) / 1024;
+    // conversions
+    const pastMB = pastBytes / 1024 / 1024;
+    const currentMB = currentBytes / 1024 / 1024;
+    const freedKB = (pastBytes - currentBytes) / 1024;
 
-      console.log(
-        chalk.green(`Current memory usage: ${chalk.grey(currentMB.toFixed(2))} MB (${chalk.grey((currentBytes / 1024).toFixed(2))} kB)`)
-      );
-      console.log(
-        chalk.green(`Freed memory: ${chalk.grey(-freedKB.toFixed(2))} kB`)
-      );
-    } catch (err) {
-      console.error(chalk.red("Error clearing memory:"), err);
-    }
+    console.log(
+      chalk.green(
+        `Current memory usage: ${chalk.grey(currentMB.toFixed(2))} MB (${chalk.grey((currentBytes / 1024).toFixed(2))} kB)`,
+      ),
+    );
+    console.log(
+      chalk.green(`Freed memory: ${chalk.grey(-freedKB.toFixed(2))} kB`),
+    );
+  } catch (err) {
+    console.error(chalk.red("Error clearing memory:"), err);
+  }
 
-    // Shutdown
-    process.exit(0);
-  },
-);
+  // Shutdown
+  process.exit(0);
+});
