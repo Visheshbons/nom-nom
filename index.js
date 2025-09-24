@@ -33,84 +33,8 @@ if (!fs.existsSync("./data")) {
   }
 }
 
-// Default time slots configuration (12:30 PM - 1:15 PM in 2-minute intervals)
-const DEFAULT_TIME_SLOTS = [
-  "12:30",
-  "12:32",
-  "12:34",
-  "12:36",
-  "12:38",
-  "12:40",
-  "12:42",
-  "12:44",
-  "12:46",
-  "12:48",
-  "12:50",
-  "12:52",
-  "12:54",
-  "12:56",
-  "12:58",
-  "1:00",
-  "1:02",
-  "1:04",
-  "1:06",
-  "1:08",
-  "1:10",
-  "1:12",
-  "1:14",
-];
-
-// Default menu configuration
-const DEFAULT_MENU = [
-  {
-    name: "Cookies",
-    price: 2.5,
-    stock: 75,
-    visible: true,
-  },
-  {
-    name: "Brownies",
-    price: 2,
-    stock: 25,
-    visible: true,
-    custom: {
-      mnms: 25,
-      oreos: 25,
-      sprinkles: 25,
-      marshmallows: 25,
-      sauces: {
-        choco: 50,
-        caramel: 50,
-        strawberry: 50,
-      },
-    },
-  },
-  {
-    name: "Lemonade",
-    price: 1.5,
-    stock: 40,
-    visible: true,
-  },
-  {
-    name: "Gambling",
-    price: 2,
-    stock: 2500,
-    visible: false,
-  },
-];
-
 // Initialize JSON files if they don't exist
 const dataFiles = [
-  {
-    path: "./data/timeSlots.json",
-    data: DEFAULT_TIME_SLOTS,
-    name: "Time Slots",
-  },
-  {
-    path: "./data/menu.json",
-    data: DEFAULT_MENU,
-    name: "Menu",
-  },
   {
     path: "./data/orders.json",
     data: [],
