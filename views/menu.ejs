@@ -74,12 +74,12 @@
                 <form action="/pre-order" method="POST">
                     <div class="form-group">
                         <label for="item">Item:</label>
-                        <input type="text" id="item" name="item" readonly>
+                        <input type="text" id="item" name="item" readonly style="cursor: not-allowed;">
                     </div>
 
                     <div class="form-group">
                         <label for="quantity">Quantity:</label>
-                        <input type="number" id="quantity" name="quantity" min="1" max="10" value="1" required>
+                        <input type="number" id="quantity" name="quantity" min="1" max="10" placeholder="Six Seven" required>
                     </div>
 
                     <div class="form-group">
@@ -166,7 +166,7 @@
                 // Update max quantity based on stock
                 const quantityInput = document.getElementById('quantity');
                 quantityInput.max = Math.min(10, stock);
-                quantityInput.value = 1;
+                quantityInput.placeholder = `≤ ${Math.min(10, stock)}`;
                 updateTotal();
                 document.getElementById('orderModal').style.display = 'block';
             }
