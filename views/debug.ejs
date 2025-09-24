@@ -143,28 +143,148 @@
             grid-column: 1 / -1;
         }
 
+        .logs-header {
+            display: flex;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            font-family: 'Courier New', Monaco, monospace;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
+
+        .timestamp-header {
+            flex: 0 0 220px;
+            padding: 12px 15px;
+            border-right: 3px solid #00ff00;
+            text-align: center;
+            background: rgba(0, 255, 0, 0.05);
+        }
+
+        .content-header {
+            flex: 1;
+            padding: 12px 15px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
         .logs-container {
             background: #000;
             border: 2px solid #00ff00;
-            padding: 20px;
+            border-top: none;
             max-height: 500px;
             overflow-y: auto;
-            border-radius: 5px;
+            border-radius: 0 0 5px 5px;
             box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+            display: flex;
+            flex-direction: column;
         }
 
         .log-entry {
-            margin: 5px 0;
-            padding: 8px;
-            border-left: 3px solid #00ff00;
+            display: flex;
+            margin: 2px 0;
             background: rgba(0, 255, 0, 0.02);
             font-size: 0.9em;
-            white-space: pre-wrap;
-            word-break: break-all;
+            border-bottom: 1px solid rgba(0, 255, 0, 0.1);
         }
 
         .log-entry:hover {
             background: rgba(0, 255, 0, 0.05);
+        }
+
+        .log-timestamp {
+            flex: 0 0 220px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, rgba(0, 255, 0, 0.08), rgba(0, 255, 0, 0.02));
+            border-right: 3px solid #00ff00;
+            font-family: 'Courier New', Monaco, monospace;
+            font-size: 0.75em;
+            color: #00ff88;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .log-timestamp::before {
+            content: "●";
+            color: #00ff00;
+            margin-right: 8px;
+            font-size: 0.6em;
+            animation: pulse 2s infinite;
+        }
+
+        .log-content {
+            flex: 1;
+            padding: 10px 15px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            color: #00ff00;
+            line-height: 1.4;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* Responsive design for mobile */
+        @media (max-width: 768px) {
+            .logs-header {
+                flex-direction: column;
+            }
+
+            .timestamp-header, .content-header {
+                flex: none;
+                border-right: none;
+                border-bottom: 1px solid #00ff00;
+                padding: 8px 12px;
+            }
+
+            .content-header {
+                border-bottom: none;
+            }
+
+            .log-entry {
+                flex-direction: column;
+            }
+
+            .log-timestamp {
+                flex: none;
+                border-right: none;
+                border-bottom: 2px solid #00ff00;
+                font-size: 0.7em;
+                padding: 6px 12px;
+                text-align: center;
+            }
+
+            .log-content {
+                padding: 8px 12px;
+                font-size: 0.85em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logs-container {
+                max-height: 400px;
+            }
+
+            .log-timestamp {
+                padding: 4px 8px;
+                font-size: 0.65em;
+            }
+
+            .log-content {
+                padding: 6px 8px;
+                font-size: 0.8em;
+            }
         }
 
         .progress-bar {
@@ -536,9 +656,23 @@
             <!-- System Logs -->
             <div class="debug-section logs-section">
                 <h2>► SYSTEM LOGS (LAST 50)</h2>
+                <div class="logs-header">
+                    <div class="timestamp-header">TIMESTAMP</div>
+                    <div class="content-header">LOG CONTENT</div>
+                </div>
                 <div class="logs-container">
                     <% data.logs.forEach(log => { %>
-                    <div class="log-entry"><%= typeof log === 'object' ? JSON.stringify(log, null, 2) : log %></div>
+                    <div class="log-entry">
+                        <div class="log-timestamp">
+                            <%= log.timestamp ? new Date(log.timestamp).toLocaleTimeString('en-US', {
+                                hour12: false,
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit'
+                            }) + '.' + new Date(log.timestamp).getMilliseconds().toString().padStart(3, '0') : '' %>
+                        </div>
+                        <div class="log-content"><%= log.content || log %></div>
+                    </div>
                     <% }) %>
                 </div>
             </div>
@@ -549,7 +683,7 @@
         // Matrix rain effect
         function createMatrixRain() {
             const matrix = document.getElementById('matrix');
-            const characters = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン';
+            const characters = 'qwertyuiop[]\\asdfghjkl;\'zxcvbnm,./{}|:"<>?1234567890-=!@#$%^&*()_+`~';
 
             for (let i = 0; i < 50; i++) {
                 const column = document.createElement('div');

@@ -21,31 +21,165 @@ const orderLimit = 2;
 const banLimit = 5;
 const selfPing = true;
 
-// Time slot configuration (12:30 PM - 1:15 PM in 5-minute intervals)
-const TIME_SLOTS = [
+// ---------- DATA INITIALIZATION ---------- \\
+// Ensure data directory exists
+if (!fs.existsSync("./data")) {
+  try {
+    fs.mkdirSync("./data");
+    console.log(chalk.green("Created data directory"));
+  } catch (err) {
+    console.error(chalk.red("Failed to create data directory:"), err);
+    process.exit(1);
+  }
+}
+
+// Default time slots configuration (12:30 PM - 1:15 PM in 2-minute intervals)
+const DEFAULT_TIME_SLOTS = [
   "12:30",
-  "12:35",
+  "12:32",
+  "12:34",
+  "12:36",
+  "12:38",
   "12:40",
-  "12:45",
+  "12:42",
+  "12:44",
+  "12:46",
+  "12:48",
   "12:50",
-  "12:55",
+  "12:52",
+  "12:54",
+  "12:56",
+  "12:58",
   "1:00",
-  "1:05",
+  "1:02",
+  "1:04",
+  "1:06",
+  "1:08",
   "1:10",
-  "1:15",
+  "1:12",
+  "1:14",
 ];
 
-// Store orders in memory (in production, use a database)
-let orders = [];
+// Default menu configuration
+const DEFAULT_MENU = [
+  {
+    name: "Cookies",
+    price: 2.5,
+    stock: 75,
+    visible: true,
+  },
+  {
+    name: "Brownies",
+    price: 2,
+    stock: 25,
+    visible: true,
+    custom: {
+      mnms: 25,
+      oreos: 25,
+      sprinkles: 25,
+      marshmallows: 25,
+      sauces: {
+        choco: 50,
+        caramel: 50,
+        strawberry: 50,
+      },
+    },
+  },
+  {
+    name: "Lemonade",
+    price: 1.5,
+    stock: 40,
+    visible: true,
+  },
+  {
+    name: "Gambling",
+    price: 2,
+    stock: 2500,
+    visible: false,
+  },
+];
 
-// Store time slot bookings
-let timeSlotBookings = {};
+// Initialize JSON files if they don't exist
+const dataFiles = [
+  {
+    path: "./data/timeSlots.json",
+    data: DEFAULT_TIME_SLOTS,
+    name: "Time Slots",
+  },
+  {
+    path: "./data/menu.json",
+    data: DEFAULT_MENU,
+    name: "Menu",
+  },
+  {
+    path: "./data/orders.json",
+    data: [],
+    name: "Orders",
+  },
+  {
+    path: "./data/timeSlotBookings.json",
+    data: {},
+    name: "Time Slot Bookings",
+  },
+];
+
+dataFiles.forEach((file) => {
+  if (!fs.existsSync(file.path)) {
+    try {
+      fs.writeFileSync(file.path, JSON.stringify(file.data, null, 2));
+      console.log(chalk.blue(`Created ${file.name} data file: ${file.path}`));
+    } catch (err) {
+      console.error(chalk.red(`Failed to create ${file.name} file:`), err);
+      process.exit(1);
+    }
+  }
+});
+
+// Load data from JSON files with error handling
+let TIME_SLOTS, orders, timeSlotBookings, menu;
+
+try {
+  TIME_SLOTS = JSON.parse(fs.readFileSync("./data/timeSlots.json", "utf8"));
+  console.log(chalk.green(`Loaded ${TIME_SLOTS.length} time slots`));
+} catch (err) {
+  console.error(chalk.red("Failed to load time slots:"), err);
+  process.exit(1);
+}
+
+try {
+  orders = JSON.parse(fs.readFileSync("./data/orders.json", "utf8"));
+  console.log(chalk.green(`Loaded ${orders.length} orders`));
+} catch (err) {
+  console.error(chalk.red("Failed to load orders:"), err);
+  process.exit(1);
+}
+
+try {
+  timeSlotBookings = JSON.parse(
+    fs.readFileSync("./data/timeSlotBookings.json", "utf8"),
+  );
+  const bookedCount = Object.keys(timeSlotBookings).length;
+  console.log(chalk.green(`Loaded ${bookedCount} time slot bookings`));
+} catch (err) {
+  console.error(chalk.red("Failed to load time slot bookings:"), err);
+  process.exit(1);
+}
+
+try {
+  menu = JSON.parse(fs.readFileSync("./data/menu.json", "utf8"));
+  console.log(chalk.green(`Loaded ${menu.length} menu items`));
+} catch (err) {
+  console.error(chalk.red("Failed to load menu:"), err);
+  process.exit(1);
+}
 
 // ---------- LOGGING ---------- \\
-const LOG_FILE = "logs.json";
+const LOG_FILE = "logs.log";
 
-// Initialize log file
-fs.writeFileSync(LOG_FILE, "[]");
+// Initialize log file if it doesn't exist
+if (!fs.existsSync(LOG_FILE)) {
+  fs.writeFileSync(LOG_FILE, "");
+}
 
 function addLog(entry) {
   try {
@@ -57,11 +191,26 @@ function addLog(entry) {
         stack: entry.stack,
       };
     }
-    const logs = JSON.parse(fs.readFileSync(LOG_FILE, "utf8"));
-    logs.push(entry); // <-- Fix: actually add the entry to logs
+
+    const timestamp = new Date().toISOString();
+    const logEntry = `${timestamp} - ${JSON.stringify(entry)}\n`;
+
+    // Read existing logs and split by newlines
+    let logLines = [];
+    if (fs.existsSync(LOG_FILE)) {
+      const logContent = fs.readFileSync(LOG_FILE, "utf8");
+      logLines = logContent.split("\n").filter((line) => line.trim() !== "");
+    }
+
+    // Add new log entry
+    logLines.push(logEntry.trim());
+
     // Keep only last 100 logs
-    if (logs.length > 100) logs.splice(0, logs.length - 100);
-    fs.writeFileSync(LOG_FILE, JSON.stringify(logs, null, 2));
+    if (logLines.length > 100) {
+      logLines = logLines.slice(-100);
+    }
+
+    fs.writeFileSync(LOG_FILE, logLines.join("\n") + "\n");
   } catch (err) {
     console.error("Failed to write log:", err);
   }
@@ -69,13 +218,68 @@ function addLog(entry) {
 
 function getLogs() {
   try {
-    return JSON.parse(fs.readFileSync(LOG_FILE, "utf8"));
+    if (!fs.existsSync(LOG_FILE)) {
+      return [];
+    }
+    const logContent = fs.readFileSync(LOG_FILE, "utf8");
+    const logLines = logContent
+      .split("\n")
+      .filter((line) => line.trim() !== "");
+
+    return logLines.map((line) => {
+      try {
+        const dashIndex = line.indexOf(" - ");
+        if (dashIndex === -1) return { timestamp: "", entry: line };
+
+        const timestamp = line.substring(0, dashIndex);
+        const jsonPart = line.substring(dashIndex + 3);
+        const entry = JSON.parse(jsonPart);
+
+        return { timestamp, entry };
+      } catch {
+        return { timestamp: "", entry: line };
+      }
+    });
   } catch (err) {
     return [];
   }
 }
 
-// ---------- ADMIN CONFIG ---------- \\
+// ---------- DATA PERSISTENCE ---------- \\
+function saveOrders() {
+  try {
+    fs.writeFileSync("./data/orders.json", JSON.stringify(orders, null, 2));
+  } catch (err) {
+    console.error("Failed to save orders:", err);
+    addLog({ error: "Failed to save orders", details: err.message });
+  }
+}
+
+function saveMenu() {
+  try {
+    fs.writeFileSync("./data/menu.json", JSON.stringify(menu, null, 2));
+  } catch (err) {
+    console.error("Failed to save menu:", err);
+    addLog({ error: "Failed to save menu", details: err.message });
+  }
+}
+
+function saveTimeSlotBookings() {
+  try {
+    fs.writeFileSync(
+      "./data/timeSlotBookings.json",
+      JSON.stringify(timeSlotBookings, null, 2),
+    );
+  } catch (err) {
+    console.error("Failed to save time slot bookings:", err);
+    addLog({
+      error: "Failed to save time slot bookings",
+      details: err.message,
+    });
+  }
+}
+
+// ---------- ADMIN ---------- \\
 const ADMIN_HASH_PASSWORD =
   "$argon2id$v=19$m=65536,t=3,p=4$OhTi43nYfnrFFabeMmUziQ$cfWTaa5o2Z1s6hI2aGwJVR/Xe4AGBCrE9vClzm8lI8w";
 const ADMIN_HASH_USERNAME =
@@ -127,43 +331,7 @@ function validateBody(req, res, next) {
 }
 
 // ---------- MENU ---------- \\
-let menu = [
-  {
-    name: "Cookies",
-    price: 2.5,
-    stock: 75,
-    visible: true,
-  },
-  {
-    name: "Brownies",
-    price: 2,
-    stock: 25,
-    visible: true,
-    custom: {
-      mnms: 25,
-      oreos: 25,
-      sprinkles: 25,
-      marshmallows: 25,
-      sauces: {
-        choco: 50,
-        caramel: 50,
-        strawberry: 50,
-      },
-    },
-  },
-  {
-    name: "Lemonade",
-    price: 1.5,
-    stock: 40,
-    visible: true,
-  },
-  {
-    name: "Gambling",
-    price: 2,
-    stock: 2500,
-    visible: false,
-  },
-];
+// Menu is already loaded above with error handling
 
 // ---------- PATHS ---------- \\
 
@@ -294,9 +462,11 @@ app.post(
     }
 
     menuItem.stock -= orderDetails.quantity;
+    saveMenu();
 
     // Book the time slot
     timeSlotBookings[timeSlot] = true;
+    saveTimeSlotBookings();
 
     // Create final order
     const order = {
@@ -316,6 +486,7 @@ app.post(
     addLog(order);
 
     orders.push(order);
+    saveOrders();
     userOrders++;
 
     // Clear pending order and update user order count
@@ -475,6 +646,7 @@ app.post(
       // If order is being cancelled, free up the time slot
       if (status === "cancelled" && order.timeSlot) {
         delete timeSlotBookings[order.timeSlot];
+        saveTimeSlotBookings();
       }
       order.status = status;
     }
@@ -494,16 +666,19 @@ app.delete("/admin/orders/:id", requireAuth, (req, res) => {
     // Free up time slot if order had one
     if (order.timeSlot) {
       delete timeSlotBookings[order.timeSlot];
+      saveTimeSlotBookings();
     }
 
     // Add back stock to menu item
     const menuItem = menu.find((m) => m.name === order.item);
     if (menuItem) {
       menuItem.stock += order.quantity;
+      saveMenu();
     }
 
     // Remove order from list
     orders.splice(orderIndex, 1);
+    saveOrders();
     res.json({ success: true });
   } else {
     res.json({ success: false });
@@ -552,6 +727,7 @@ app.post(
     if (order && order.timeSlot) {
       // Free up the time slot
       delete timeSlotBookings[order.timeSlot];
+      saveTimeSlotBookings();
       order.status = "cancelled";
     }
 
@@ -595,7 +771,23 @@ app.get("/debug", requireAuth, (req, res) => {
     addLog(`[WARN]: Debug route accessed`);
   }
 
-  const logsToDisplay = getLogs().slice(-50);
+  const rawLogs = getLogs().slice(-50);
+  const logsToDisplay = rawLogs.map((logObj) => {
+    if (typeof logObj === "object" && logObj.entry !== undefined) {
+      return {
+        timestamp: logObj.timestamp,
+        content:
+          typeof logObj.entry === "object"
+            ? JSON.stringify(logObj.entry)
+            : logObj.entry,
+      };
+    }
+    // For backward compatibility with any non-structured logs
+    return {
+      timestamp: "",
+      content: logObj,
+    };
+  });
 
   // Prepare debug information
   const debugInfo = {
@@ -706,6 +898,34 @@ app.get("/debug/logs", requireAuth, (req, res) => {
   console.log(`[${chalk.red(`WARN`)}]: Logs accessed.`);
   addLog(`[WARN]: Logs accessed.`);
   res.json(getLogs());
+});
+
+// Clear all data files endpoint
+app.post("/admin/clear-files", requireAuth, (req, res) => {
+  try {
+    console.log(`[${chalk.red(`WARN`)}]: All files cleared by admin.`);
+    addLog(`[WARN]: All files cleared by admin.`);
+
+    // Clear in-memory data
+    orders = [];
+    timeSlotBookings = {};
+    adminSessions.clear();
+
+    // Clear and recreate JSON files
+    saveOrders();
+    saveTimeSlotBookings();
+
+    // Clear log file
+    fs.writeFileSync(LOG_FILE, "");
+
+    res.json({
+      success: true,
+      message: "All data files cleared successfully.",
+    });
+  } catch (err) {
+    console.error("Failed to clear files:", err);
+    res.status(500).json({ success: false, message: "Failed to clear files." });
+  }
 });
 
 // ---------- OTHERS ---------- \\
@@ -1353,15 +1573,32 @@ process.on("SIGINT" || "SIGTERM", () => {
     chalk.yellowBright("----------########## SHUTDOWN ##########----------"),
   );
 
-  // Delete logs.json
+  // Delete all data files
   console.log();
   try {
+    // Delete log file
     if (fs.existsSync(LOG_FILE)) {
       fs.unlinkSync(LOG_FILE);
-      console.log(chalk.green("Logs file deleted."));
+      console.log(chalk.green("Log file deleted."));
+    }
+
+    // Delete JSON data files
+    const jsonFiles = ["./data/orders.json", "./data/timeSlotBookings.json"];
+
+    jsonFiles.forEach((file) => {
+      if (fs.existsSync(file)) {
+        fs.unlinkSync(file);
+        console.log(chalk.green(`${file} deleted.`));
+      }
+    });
+
+    // Delete data directory if empty
+    if (fs.existsSync("./data") && fs.readdirSync("./data").length === 0) {
+      fs.rmdirSync("./data");
+      console.log(chalk.green("Data directory deleted."));
     }
   } catch (err) {
-    console.error(chalk.red("Error deleting logs file:"), err);
+    console.error(chalk.red("Error deleting files:"), err);
   }
 
   // Clear server memory
@@ -1373,7 +1610,15 @@ process.on("SIGINT" || "SIGTERM", () => {
     orders = [];
     timeSlotBookings = {};
     adminSessions.clear();
-    console.log(chalk.green("Server memory cleared."));
+
+    // Clear and recreate JSON files
+    saveOrders();
+    saveTimeSlotBookings();
+
+    // Clear log file
+    fs.writeFileSync(LOG_FILE, "");
+
+    console.log(chalk.green("Server memory and files cleared."));
 
     const currentBytes = process.memoryUsage().heapUsed;
 
