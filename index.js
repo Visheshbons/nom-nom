@@ -45,6 +45,49 @@ const dataFiles = [
     data: {},
     name: "Time Slot Bookings",
   },
+  {
+    path: "./data/menu.json",
+    data: [
+      [
+        {
+          name: "Cookies",
+          price: 2.5,
+          stock: 75,
+          visible: true,
+        },
+        {
+          name: "Brownies",
+          price: 2,
+          stock: 25,
+          visible: true,
+          custom: {
+            mnms: 25,
+            oreos: 25,
+            sprinkles: 25,
+            marshmallows: 25,
+            sauces: {
+              choco: 50,
+              caramel: 50,
+              strawberry: 50,
+            },
+          },
+        },
+        {
+          name: "Lemonade",
+          price: 1.5,
+          stock: 40,
+          visible: true,
+        },
+        {
+          name: "Gambling",
+          price: 2,
+          stock: 2500,
+          visible: false,
+        },
+      ],
+    ],
+    name: "Menu",
+  },
 ];
 
 dataFiles.forEach((file) => {
@@ -98,7 +141,7 @@ try {
 }
 
 // ---------- LOGGING ---------- \\
-const LOG_FILE = "logs.log";
+const LOG_FILE = "server.log";
 
 // Initialize log file if it doesn't exist
 if (!fs.existsSync(LOG_FILE)) {
@@ -209,7 +252,9 @@ const ADMIN_HASH_PASSWORD =
 
 // Simple session storage (in memory)
 let adminSessions = new Set();
-let serverSession = Math.random().toString(36).substring(2, 15);
+let serverSession =
+  Math.random().toString(36).substring(2, 15) +
+  Math.random().toString(36).substring(2, 15);
 // Server session is used as a random identifier for the auth cookies
 // This helps against cookies being made and used to bypass login
 // This is logged in the server start
@@ -993,7 +1038,9 @@ app.listen(PORT, async () => {
 
   setInterval(
     () => {
-      serverSession = Math.random().toString(36).substring(2, 15);
+      serverSession =
+        Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
     },
     1 * 12 * 60 * 60 * 1000,
   ); // Every 12 hours

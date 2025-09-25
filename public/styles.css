@@ -830,27 +830,22 @@ body.login-page {
 }
 
 .status-pending {
-    background-color: #ffc107;
-    color: #212529;
+    background-color: #ff9100;
+    color: white;
 }
 
-.status-preparing {
-    background-color: #17a2b8;
+.status-approved {
+    background-color: #057bb5;
     color: white;
 }
 
 .status-ready {
-    background-color: #fd7e14;
+    background-color: #00b50f;
     color: white;
 }
 
-.status-completed {
-    background-color: #28a745;
-    color: white;
-}
-
-.status-cancelled {
-    background-color: #dc3545;
+.status-paid {
+    background-color: #426945;
     color: white;
 }
 

@@ -95,10 +95,9 @@
                                         <div class="action-row">
                                             <select onchange="updateOrderStatus(<%= orders[i].id %>, this.value)" class="status-select">
                                                 <option value="pending" <%= orders[i].status === 'pending' ? 'selected' : '' %>>Pending</option>
-                                                <option value="preparing" <%= orders[i].status === 'preparing' ? 'selected' : '' %>>Preparing</option>
+                                                <option value="approved" <%= orders[i].status === 'approved' ? 'selected' : '' %>>Approved</option>
                                                 <option value="ready" <%= orders[i].status === 'ready' ? 'selected' : '' %>>Ready</option>
-                                                <option value="completed" <%= orders[i].status === 'completed' ? 'selected' : '' %>>Completed</option>
-                                                <option value="cancelled" <%= orders[i].status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                                <option value="paid" <%= orders[i].status === 'paid' ? 'selected' : '' %>>Paid</option>
                                             </select>
                                         </div>
                                         <div class="action-row">
@@ -164,10 +163,9 @@
                                 <div class="mobile-action-row">
                                     <select onchange="updateOrderStatus(<%= orders[i].id %>, this.value)" class="mobile-status-select">
                                         <option value="pending" <%= orders[i].status === 'pending' ? 'selected' : '' %>>Pending</option>
-                                        <option value="preparing" <%= orders[i].status === 'preparing' ? 'selected' : '' %>>Preparing</option>
+                                        <option value="approved" <%= orders[i].status === 'approved' ? 'selected' : '' %>>Approved</option>
                                         <option value="ready" <%= orders[i].status === 'ready' ? 'selected' : '' %>>Ready</option>
-                                        <option value="completed" <%= orders[i].status === 'completed' ? 'selected' : '' %>>Completed</option>
-                                        <option value="cancelled" <%= orders[i].status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+                                        <option value="paid" <%= orders[i].status === 'paid' ? 'selected' : '' %>>Paid</option>
                                     </select>
                                 </div>
                                 <div class="mobile-action-row">
