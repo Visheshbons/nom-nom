@@ -48,43 +48,41 @@ const dataFiles = [
   {
     path: "./data/menu.json",
     data: [
-      [
-        {
-          name: "Cookies",
-          price: 2.5,
-          stock: 75,
-          visible: true,
-        },
-        {
-          name: "Brownies",
-          price: 2,
-          stock: 25,
-          visible: true,
-          custom: {
-            mnms: 25,
-            oreos: 25,
-            sprinkles: 25,
-            marshmallows: 25,
-            sauces: {
-              choco: 50,
-              caramel: 50,
-              strawberry: 50,
-            },
+      {
+        name: "Cookies",
+        price: 2.5,
+        stock: 75,
+        visible: true,
+      },
+      {
+        name: "Brownies",
+        price: 2,
+        stock: 25,
+        visible: true,
+        custom: {
+          mnms: 25,
+          oreos: 25,
+          sprinkles: 25,
+          marshmallows: 25,
+          sauces: {
+            choco: 50,
+            caramel: 50,
+            strawberry: 50,
           },
         },
-        {
-          name: "Lemonade",
-          price: 1.5,
-          stock: 40,
-          visible: true,
-        },
-        {
-          name: "Gambling",
-          price: 2,
-          stock: 2500,
-          visible: false,
-        },
-      ],
+      },
+      {
+        name: "Lemonade",
+        price: 1.5,
+        stock: 40,
+        visible: true,
+      },
+      {
+        name: "Gambling",
+        price: 2,
+        stock: 2500,
+        visible: false,
+      },
     ],
     name: "Menu",
   },
@@ -1544,7 +1542,11 @@ process.on("SIGINT" || "SIGTERM", () => {
     }
 
     // Delete JSON data files
-    const jsonFiles = ["./data/orders.json", "./data/timeSlotBookings.json"];
+    const jsonFiles = [
+      "./data/orders.json",
+      "./data/timeSlotBookings.json",
+      "./data/menu.json",
+    ];
 
     jsonFiles.forEach((file) => {
       if (fs.existsSync(file)) {
