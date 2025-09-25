@@ -205,9 +205,7 @@ function saveTimeSlotBookings() {
 
 // ---------- ADMIN ---------- \\
 const ADMIN_HASH_PASSWORD =
-  "$argon2id$v=19$m=65536,t=3,p=4$OhTi43nYfnrFFabeMmUziQ$cfWTaa5o2Z1s6hI2aGwJVR/Xe4AGBCrE9vClzm8lI8w";
-const ADMIN_HASH_USERNAME =
-  "$argon2id$v=19$m=65536,t=3,p=4$+hZ9ryGeRQBX0Zjhc9bFNA$d8fSQDyxKx2BR61woYg3lwdNr/Xwgeff8QEf+agTUic";
+  "$argon2id$v=19$m=65536,t=3,p=4$PYxQnK6RuBOMyn6u1h0PtA$f6q6gks0w4qSLsvNUTDs3Yb4IdmGObuzeGjEBcEATKQ";
 
 // Simple session storage (in memory)
 let adminSessions = new Set();
@@ -1345,9 +1343,7 @@ async function GeneralTest() {
     },
     {
       description: "All admin credentials are strings",
-      test: () =>
-        typeof ADMIN_HASH_USERNAME === "string" &&
-        typeof ADMIN_HASH_PASSWORD === "string",
+      test: () => typeof ADMIN_HASH_PASSWORD === "string",
     },
     {
       description:
