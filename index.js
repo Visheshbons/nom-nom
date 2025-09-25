@@ -585,9 +585,14 @@ app.get("/admin/logout", (req, res) => {
 app.get("/admin", requireAuth, (req, res) => {
   const stats = {
     totalOrders: orders.length,
+
     pendingOrders: orders.filter((o) => o.status === "pending").length,
+
     completedOrders: orders.filter((o) => o.status === "completed").length,
-    totalRevenue: orders.reduce((sum, order) => sum + order.total, 0),
+
+    totalRevenue: orders
+      .filter((o) => o.status === "paid")
+      .reduce((sum, order) => sum + order.total, 0),
   };
 
   res.render("admin.ejs", {
