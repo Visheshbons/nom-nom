@@ -107,7 +107,6 @@ let TIME_SLOTS, orders, timeSlotBookings, menu;
 
 try {
   TIME_SLOTS = JSON.parse(fs.readFileSync("./data/timeSlots.json", "utf8"));
-  console.log(chalk.green(`Loaded ${TIME_SLOTS.length} time slots`));
 } catch (err) {
   console.error(chalk.red("Failed to load time slots:"), err);
   process.exit(1);
@@ -1438,14 +1437,9 @@ async function GeneralTest() {
     },
     {
       description:
-        "No order has a status other than pending, completed, confirmed, cancelled",
+        "No order has a status other than pending, approved, ready, paid",
       test: () => {
-        const validStatuses = [
-          "pending",
-          "completed",
-          "confirmed",
-          "cancelled",
-        ];
+        const validStatuses = ["pending", "approved", "ready", "paid"];
         return (
           orders.every((order) => validStatuses.includes(order.status)) ||
           orders.length === 0
