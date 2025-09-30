@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Cookies",
+    "price": 2.5,
+    "stock": 65,
+    "visible": true
+  },
+  {
+    "name": "Brownies",
+    "price": 2,
+    "stock": 25,
+    "visible": true,
+    "custom": {
+      "mnms": 25,
+      "oreos": 25,
+      "sprinkles": 25,
+      "marshmallows": 25,
+      "sauces": {
+        "choco": 50,
+        "caramel": 50,
+        "strawberry": 50
+      }
+    }
+  },
+  {
+    "name": "Lemonade",
+    "price": 1.5,
+    "stock": 40,
+    "visible": true
+  },
+  {
+    "name": "Gambling",
+    "price": 2,
+    "stock": 2500,
+    "visible": false
+  }
+]
