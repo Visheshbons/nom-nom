@@ -1,14 +1,1 @@
-[
-  {
-    "id": 1,
-    "item": "Cookies",
-    "quantity": 10,
-    "customerName": "John Cena",
-    "customerEmail": "4jcena@hbhs.school.nz",
-    "price": 2.5,
-    "total": 25,
-    "timeSlot": "12:44",
-    "timestamp": "2025-09-30T07:49:23.324Z",
-    "status": "pending"
-  }
-]
+[]
