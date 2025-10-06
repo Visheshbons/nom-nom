@@ -51,7 +51,13 @@ const dataFiles = [
       {
         name: "Cookies",
         price: 2.5,
-        stock: 75,
+        stock: 30,
+        visible: true,
+      },
+      {
+        name: "ANZACSs",
+        price: 2,
+        stock: 30,
         visible: true,
       },
       {
