@@ -1041,8 +1041,8 @@ app.listen(PORT, async () => {
     async () => {
       await GeneralTest();
     },
-    1 * 60 * 60 * 1000,
-  ); // Every hour
+    6 * 60 * 60 * 1000,
+  ); // Every 6 hours
 
   setInterval(
     () => {
@@ -1059,21 +1059,24 @@ app.listen(PORT, async () => {
 if (selfPing) {
   console.log("SELF PING ACTIVE");
   console.time("Ping Interval");
-  setInterval(() => {
-    fetch("https://nomnomfood.onrender.com")
-      .then(() => {
-        console.log();
-        console.log("SELF PING");
-        console.timeEnd("Ping Interval");
-        console.time("Ping Interval");
-        console.log();
-      })
-      .catch((err) => {
-        console.log();
-        console.error("Ping failed:", err);
-        console.log();
-      });
-  }, 600000); // 600,000 milliseconds = 10 minutes
+  setInterval(
+    () => {
+      fetch("https://nomnomfood.onrender.com")
+        .then(() => {
+          console.log();
+          console.log("SELF PING");
+          console.timeEnd("Ping Interval");
+          console.time("Ping Interval");
+          console.log();
+        })
+        .catch((err) => {
+          console.log();
+          console.error("Ping failed:", err);
+          console.log();
+        });
+    },
+    120000 + Math.random() * 60000,
+  ); // 120,000 milliseconds = 2 minutes
 }
 
 // ---------- TESTS ---------- \\
