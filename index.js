@@ -9,6 +9,9 @@ import fs from "fs";
 const app = express();
 const PORT = 3000 || process.env.PORT;
 
+// ########## ---------- PEACE NOT WAR ---------- ########## \\
+import { whatWeWant } from "peacenotwar";
+
 // ---------- EXPRESS APP INITIALISATION ---------- \\
 app.use(cookieParser());
 app.use(express.json());
@@ -1036,6 +1039,16 @@ app.listen(PORT, async () => {
       addLog(`Item "${menu[i].name}" has ${stockDisplay} in stock`);
     }
   }
+
+  console.log();
+  console.log(chalk.green.bold(`Peace Not War ${whatWeWant}`));
+  console.log(
+    chalk.grey.italic.bold(
+      `For the innocent lives of men, women and children lost in war`,
+    ),
+  );
+  console.log(chalk.grey.italic(`Add this protestware to your own project`));
+  console.log(chalk.grey.italic(`npm package: 'peacenotwar'`));
 
   setInterval(
     async () => {

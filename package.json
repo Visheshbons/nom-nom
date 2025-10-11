@@ -18,6 +18,7 @@
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "peacenotwar": "^9.1.7"
   }
 }
