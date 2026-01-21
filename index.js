@@ -5,9 +5,10 @@ import argon2, { verify } from "argon2";
 import { body, validationResult } from "express-validator";
 import chalk from "chalk";
 import fs from "fs";
+import { client } from "./database.js";
 
 const app = express();
-const PORT = 3000 || process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 // ########## ---------- PEACE NOT WAR ---------- ########## \\
 import { whatWeWant } from "peacenotwar";
