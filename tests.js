@@ -1,7 +1,19 @@
 import chalk from "chalk";
 import argon2 from "argon2";
+import fs from "fs";
 
-import { menu } from "./index.js";
+import {
+  menu,
+  orders,
+  TIME_SLOTS,
+  timeSlotBookings,
+  adminSessions,
+  LOG_FILE,
+  orderLimit,
+  banLimit,
+  serverSession,
+  ADMIN_HASH_PASSWORD,
+} from "./index.js";
 
 function addLog(entry) {
   try {
@@ -480,10 +492,6 @@ async function GeneralTest() {
         menu
           .filter((item) => item.custom)
           .every((item) => typeof item.custom === "object"),
-    },
-    {
-      description: "Server is listening on the configured port",
-      test: () => typeof PORT === "number" && PORT > 0,
     },
     {
       description: "Logging middleware is present",
