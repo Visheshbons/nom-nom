@@ -6,7 +6,7 @@ import { body, validationResult } from "express-validator";
 import chalk from "chalk";
 import fs from "fs";
 import { GeneralTest, Argon2SelfTest } from "./tests.js";
-import { run } from "./database.js";
+import { database as db } from "./database.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1044,7 +1044,7 @@ app.listen(PORT, async () => {
   }
 
   console.log();
-  await run();
+  await db();
 
   console.log();
   console.log(chalk.green.bold(`Peace Not War ${whatWeWant}`));
