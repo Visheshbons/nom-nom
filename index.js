@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 // ########## ---------- PEACE NOT WAR ---------- ########## \\
 import { whatWeWant } from "peacenotwar";
+import { forwardRef } from "react";
 
 // ---------- EXPRESS APP INITIALISATION ---------- \\
 app.use(cookieParser());
@@ -290,7 +291,7 @@ function requireAuth(req, res, next) {
 }
 
 function bannedIPBlock(req, res, next) {
-  const ip = req.ip;
+  const ip = req.headers["x-forwarded-for"] || req.ip;
   let allowed = true;
 
   for (let i = 0; i < bannedIPs.length; i++) {
@@ -331,7 +332,7 @@ function validateBody(req, res, next) {
 // Menu is already loaded above with error handling
 
 // Blocking banned IPs
-app.use(bannedIPBlock());
+app.use(bannedIPBlock);
 
 // ---------- PATHS ---------- \\
 
@@ -470,7 +471,7 @@ app.post(
         console.warn("reCAPTCHA failed:", data);
         res.status(403).send("reCAPTCHA verification failed");
 
-        const ip = req.ip;
+        const ip = req.headers["x-forwarded-for"] || req.ip;
         bannedIPs.push(ip);
         return;
       }
