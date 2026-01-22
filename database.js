@@ -59,40 +59,50 @@ async function database() {
     await timeSlotBookingsCollection.createIndex({ booked: 1 });
 
     /* =====================
-       OPTIONAL SEEDING
+       SEEDING
     ===================== */
     if ((await menuCollection.countDocuments()) === 0) {
-      const menuData = JSON.parse(await fs.readFile("./menu.json", "utf-8"));
-      await menuCollection.insertMany(menuData);
-      console.log(chalk.cyan("Seeded menu collection"));
+      const menuData = JSON.parse(
+        await fs.readFile("./data/menu.json", "utf-8"),
+      );
+      if (menuData.length > 0) {
+        await menuCollection.insertMany(menuData);
+        console.log(chalk.cyan("Seeded menu collection"));
+      }
     }
 
     if ((await ordersCollection.countDocuments()) === 0) {
       const ordersData = JSON.parse(
-        await fs.readFile("./orders.json", "utf-8"),
+        await fs.readFile("./data/orders.json", "utf-8"),
       );
-      await ordersCollection.insertMany(ordersData);
-      console.log(chalk.cyan("Seeded orders collection"));
+      if (ordersData.length > 0) {
+        await ordersCollection.insertMany(ordersData);
+        console.log(chalk.cyan("Seeded orders collection"));
+      }
     }
 
     if ((await timeSlotsCollection.countDocuments()) === 0) {
       const slots = JSON.parse(
-        await fs.readFile("./timeSlots.json", "utf-8"),
+        await fs.readFile("./data/timeSlots.json", "utf-8"),
       ).map((slot) => ({ slot }));
-      await timeSlotsCollection.insertMany(slots);
-      console.log(chalk.cyan("Seeded timeSlots collection"));
+      if (slots.length > 0) {
+        await timeSlotsCollection.insertMany(slots);
+        console.log(chalk.cyan("Seeded timeSlots collection"));
+      }
     }
 
     if ((await timeSlotBookingsCollection.countDocuments()) === 0) {
       const bookingsRaw = JSON.parse(
-        await fs.readFile("./timeSlotBookings.json", "utf-8"),
+        await fs.readFile("./data/timeSlotBookings.json", "utf-8"),
       );
       const bookings = Object.entries(bookingsRaw).map(([slot, booked]) => ({
         slot,
         booked,
       }));
-      await timeSlotBookingsCollection.insertMany(bookings);
-      console.log(chalk.cyan("Seeded timeSlotBookings collection"));
+      if (bookings.length > 0) {
+        await timeSlotBookingsCollection.insertMany(bookings);
+        console.log(chalk.cyan("Seeded timeSlotBookings collection"));
+      }
     }
 
     /* =====================
@@ -174,3 +184,16 @@ async function database() {
 }
 
 export { client, database };
+
+/* ====================
+The Nom-Nom project is dedicated to:
+
+* Krishh Grover, Muhammad Abdullah, and Logan Norman, as the fellow founders of Nom-Nom.
+* I would also like to acknowledge Ian Harrison, for allowing me to make a website for our stall on Market Day 2025.
+* e085d08ea02c10e8eb4f3ed507047b1fa9b31bdf1ac60c3d189d3b27c222fb8b9f884207e62c323b8dd8b095d8824ba6
+
+There are a lot of people who have also helped, but I am too lazy to fit it all in a JS comment, but still, I appreciate it.
+
+The Nom-Nom Project
+Vishesh Kudva
+ ==================== */
