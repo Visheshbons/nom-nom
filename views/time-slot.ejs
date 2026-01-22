@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Comic+Relief:wght@400;700&display=swap" rel="stylesheet">
     <title>Select Pickup Time | Nom Nom</title>
+    <script src="https://www.google.com/recaptcha/api.js?render=<%= process.env.RECAPTCHA_SITE_KEY %>"></script>
 </head>
 <body>
     <%- include('header') %>
@@ -83,38 +84,56 @@
                         <button type="submit" id="confirmBtn" disabled>Confirm Order</button>
                         <a href="/menu" class="cancel-btn">Back to Menu</a>
                     </div>
+
+                    <input type="hidden" name="recaptchaToken" id="recaptchaToken">
+
                 </form>
             </div>
         </section>
 
         <script>
-            const timeSlotInputs = document.querySelectorAll('input[name="timeSlot"]');
+          document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('timeSlotForm');
             const confirmBtn = document.getElementById('confirmBtn');
+            const timeSlotInputs = document.querySelectorAll('input[name="timeSlot"]');
 
-            // Enable confirm button if a timeslot is already checked on page load
-            document.addEventListener('DOMContentLoaded', function() {
-                const checkedInput = Array.from(timeSlotInputs).find(input => input.checked);
-                if (checkedInput) {
-                    confirmBtn.disabled = false;
-                }
+            // Enable button if slot already selected
+            if ([...timeSlotInputs].some(i => i.checked)) {
+              confirmBtn.disabled = false;
+            }
 
-                // Add animation on load
-                const slots = document.querySelectorAll('.time-slot');
-                slots.forEach((slot, index) => {
-                    setTimeout(() => {
-                        slot.style.opacity = '1';
-                        slot.style.transform = 'translateY(0)';
-                    }, index * 50);
-                });
-            });
-
-            // Enable confirm button when a timeslot is selected
+            // Enable button on selection
             timeSlotInputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    confirmBtn.disabled = false;
-                });
+              input.addEventListener('change', () => {
+                confirmBtn.disabled = false;
+              });
             });
+
+            // Animate slots
+            document.querySelectorAll('.time-slot').forEach((slot, i) => {
+              setTimeout(() => {
+                slot.style.opacity = '1';
+                slot.style.transform = 'translateY(0)';
+              }, i * 50);
+            });
+
+            // reCAPTCHA submit handling
+            form.addEventListener('submit', async (e) => {
+              e.preventDefault();
+
+              confirmBtn.disabled = true; // prevent double submit
+
+              const token = await grecaptcha.execute(
+                '<%= process.env.RECAPTCHA_SITE_KEY %>',
+                { action: 'confirm_order' }
+              );
+
+              document.getElementById('recaptchaToken').value = token;
+              form.submit();
+            });
+          });
         </script>
+
     </main>
 </body>
 </html>

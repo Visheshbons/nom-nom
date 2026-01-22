@@ -21,11 +21,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 app.set("view engine", "ejs");
 
+// Trust proxy headers to use req.ip
+app.set("trust proxy", true);
+
 // ---------- CONSTANTS & CONFIGURATION ---------- \\
 const orderLimit = 2;
 const banLimit = 5;
 const selfPing = false;
 // Self ping no longer works as Render is smarter now :(
+let bannedIPs = [];
 
 // ---------- DATA INITIALIZATION ---------- \\
 // Ensure data directory exists
@@ -285,6 +289,23 @@ function requireAuth(req, res, next) {
   }
 }
 
+function bannedIPBlock(req, res, next) {
+  const ip = req.ip;
+  let allowed = true;
+
+  for (let i = 0; i < bannedIPs.length; i++) {
+    if (ip == bannedIPs[i]) {
+      allowed = false;
+    }
+  }
+
+  if (allowed) {
+    next();
+  } else {
+    res.status(403).redirect("https://developers.google.com/recaptcha#/");
+  }
+}
+
 async function verifyPassword(hash, password) {
   try {
     if (await argon2.verify(hash, password)) {
@@ -308,6 +329,9 @@ function validateBody(req, res, next) {
 
 // ---------- MENU ---------- \\
 // Menu is already loaded above with error handling
+
+// Blocking banned IPs
+app.use(bannedIPBlock());
 
 // ---------- PATHS ---------- \\
 
@@ -409,16 +433,55 @@ app.post(
     body("timeSlot")
       .isString()
       .custom((value) => TIME_SLOTS.includes(value)),
+    body("recaptchaToken").isString(),
     validateBody,
   ],
-  (req, res) => {
-    const { timeSlot } = req.body;
+  async (req, res) => {
+    const { timeSlot, recaptchaToken } = req.body;
     const pendingOrder = req.cookies.pendingOrder;
 
     if (!pendingOrder) {
       return res.status(400).send("No pending order found");
     }
 
+    // =============================
+    // reCAPTCHA verification (EARLY)
+    // =============================
+    try {
+      const response = await fetch(
+        "https://www.google.com/recaptcha/api/siteverify",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            secret: process.env.RECAPTCHA_SECRET_KEY,
+            response: recaptchaToken,
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (
+        !data.success ||
+        data.score < 0.5 ||
+        data.action !== "confirm_order"
+      ) {
+        console.warn("reCAPTCHA failed:", data);
+        res.status(403).send("reCAPTCHA verification failed");
+
+        const ip = req.ip;
+        bannedIPs.push(ip);
+        return;
+      }
+    } catch (err) {
+      console.error("reCAPTCHA error:", err);
+      return res.status(500).send("Security check failed");
+    }
+
+    // =============================
+    // Normal validation
+    // =============================
     if (!timeSlot || !TIME_SLOTS.includes(timeSlot)) {
       return res.status(400).send("Invalid time slot");
     }
@@ -431,12 +494,15 @@ app.post(
     const orderDetails = JSON.parse(pendingOrder);
     let userOrders = req.cookies.OrderCount || 0;
 
-    // Find the menu item and update stock
+    // Find menu item
     const menuItem = menu.find((m) => m.name === orderDetails.item);
     if (!menuItem || menuItem.stock < orderDetails.quantity) {
       return res.status(400).send("Item no longer available");
     }
 
+    // =============================
+    // Irreversible actions (SAFE)
+    // =============================
     menuItem.stock -= orderDetails.quantity;
     saveMenu();
 
@@ -453,7 +519,7 @@ app.post(
       customerEmail: orderDetails.customerEmail,
       price: orderDetails.price,
       total: orderDetails.total,
-      timeSlot: timeSlot,
+      timeSlot,
       timestamp: new Date(),
       status: "pending",
     };
@@ -465,9 +531,10 @@ app.post(
     saveOrders();
     userOrders++;
 
-    // Clear pending order and update user order count
-    res.clearCookie("pendingOrder");
-    res.cookie("OrderCount", userOrders).redirect("/menu?success=true");
+    res
+      .clearCookie("pendingOrder")
+      .cookie("OrderCount", userOrders)
+      .redirect("/menu?success=true");
   },
 );
 
